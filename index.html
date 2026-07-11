@@ -207,6 +207,41 @@
         .forecast-card img { width: 44px; height: 44px; margin: 6px 0; }
         .temp-high { color: #ff9900; font-weight: bold; }
         .temp-low { color: #00ccff; font-weight: bold; }
+
+        /* Air Quality Component Engine Layout Blocks */
+        .aqi-panel-wrap {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+        }
+        .aqi-block-metric {
+            flex: 1;
+            min-width: 140px;
+            background: #161b22;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            padding: 15px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+        .aqi-score-callout {
+            font-size: 2.8rem;
+            font-weight: bold;
+            line-height: 1;
+            margin: 8px 0;
+            text-shadow: 0 0 10px rgba(0,0,0,0.5);
+        }
+        .aqi-pill-badge {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #000 !important;
+        }
         
         .gauge-card {
             background: #161b22;
@@ -308,6 +343,7 @@
         <div class="mobile-card"><div class="mobile-card-title">WINDY REGIONAL ALPHA</div><div class="mobile-card-body mobile-map-height" id="mob-node-mapleft"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">WINDY REGIONAL BRAVO</div><div class="mobile-card-body mobile-map-height" id="mob-node-mapright"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">7-DAY SYNOPTIC OUTLOOK</div><div class="mobile-card-body" id="mob-node-forecast"></div></div>
+        <div class="mobile-card"><div class="mobile-card-title">AIR QUALITY INDEX (19428)</div><div class="mobile-card-body" id="mob-node-aqi"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">CRITICAL HAZARDS SPECTRUM</div><div class="mobile-card-body" id="mob-node-hazards"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">LIGHTNING ARRIVAL RADAR</div><div class="mobile-card-body mobile-map-height" id="mob-node-lightning"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">SCHUYLKILL HYDROLOGIC TELEMETRY</div><div class="mobile-card-body" id="mob-node-hydro"></div></div>
@@ -337,6 +373,10 @@
         let globalActiveAlertsCache = {};
         let activeHazardFilter = 'all'; 
         
+        // Enter your AirNow API token registration key here.
+        // If left empty, the engine automatically deploys structural matrix simulations to prevent layout crashing.
+        const AIRNOW_API_KEY = ""; 
+
         const isMobileDevice = window.innerWidth < 768;
 
         const schuylkillGauges = [
@@ -443,6 +483,64 @@
                     ${period.detailedForecast}
                 </div>`;
             openFloatingModal(`${period.name} METEOROLOGICAL SPECTRUM DETAILS`, modalHTML);
+        }
+
+        // --- Air Quality Index Client (AirNow Engine) ---
+        function getAQIColorSpecs(aqiValue) {
+            if (aqiValue <= 50)  return { label: "Good", color: "#00e400" };
+            if (aqiValue <= 100) return { label: "Moderate", color: "#ffff00" };
+            if (aqiValue <= 150) return { label: "Unhealthy for Sensitive Groups", color: "#ff7e00" };
+            if (aqiValue <= 200) return { label: "Unhealthy", color: "#ff0000" };
+            if (aqiValue <= 300) return { label: "Very Unhealthy", color: "#8f3f97" };
+            return { label: "Hazardous", color: "#7e0023" };
+        }
+
+        function fetchAirQualityData() {
+            const container = document.getElementById('aqi-container-target') || document.getElementById('mob-node-aqi');
+            if(!container) return;
+
+            let processingPromise;
+
+            if (AIRNOW_API_KEY && AIRNOW_API_KEY.trim() !== "") {
+                const targetUrl = `https://www.airnowapi.org/aq/observation/zipCode/current/?format=application/json&zipCode=19428&distance=25&API_KEY=${AIRNOW_API_KEY}`;
+                processingPromise = fetch(targetUrl).then(res => res.json());
+            } else {
+                // Production-safe mock interface for standalone GitHub execution environments
+                processingPromise = Promise.resolve([
+                    { ParameterName: "O3", AQI: Math.floor(Math.random() * 20) + 25, ReportingArea: "Conshohocken Area (Simulated)" },
+                    { ParameterName: "PM2.5", AQI: Math.floor(Math.random() * 35) + 30, ReportingArea: "Conshohocken Area (Simulated)" }
+                ]);
+            }
+
+            processingPromise.then(payload => {
+                let html = `
+                    <div style="font-size:0.85rem; color:#8b949e; margin-bottom:12px;">
+                        <i class="fa-solid fa-location-dot"></i> STATION TRACKER: ${payload[0]?.ReportingArea || 'Conshohocken Sector'}
+                    </div>
+                    <div class="aqi-panel-wrap">`;
+
+                payload.forEach(pollutant => {
+                    const profile = getAQIColorSpecs(pollutant.AQI);
+                    html += `
+                        <div class="aqi-block-metric">
+                            <div style="font-size:0.8rem; color:#8b949e; font-weight:bold; letter-spacing:1px;">${pollutant.ParameterName} SPECTRUM</div>
+                            <div class="aqi-score-callout" style="color:${profile.color}">${pollutant.AQI}</div>
+                            <span class="aqi-pill-badge" style="background-color:${profile.color}">${profile.label}</span>
+                        </div>`;
+                });
+
+                html += `</div>`;
+                
+                if(isMobileDevice) {
+                    document.getElementById('mob-node-aqi').innerHTML = html;
+                } else {
+                    const el = document.getElementById('aqi-container-target');
+                    if (el) el.innerHTML = html;
+                }
+            }).catch(err => {
+                console.error("AirNow client interface connection issue: ", err);
+                container.innerHTML = `<span style="color:#ff5555; font-size:0.8rem;"><i class="fa-solid fa-circle-exclamation"></i> AIRNOW TIMEOUT ERROR — CHECK API KEY VALIDATION</span>`;
+            });
         }
 
         // --- Multi-Source Hazards Module Array ---
@@ -558,7 +656,6 @@
             if(container) container.innerHTML = html;
         }
 
-        // FIX FIXED: Routed cleanly through the official dashboard API graphing component to fix legacy 404/Object Not Found rules
         function openHydrographModal(stationId, stationName) {
             const embedUrl = `https://dashboard.waterdata.usgs.gov/api/gwis/2.1/service/site?agencyCode=USGS&siteNumber=${stationId}&open=plots&banner=false&pad=false`;
             const modalHTML = `
@@ -571,14 +668,13 @@
             openFloatingModal(`USGS WAVE MATRIX OUTLET: ${stationName}`, modalHTML);
         }
 
-        // --- Lighning Grid Vector Engine (Observer Layout Fix) ---
+        // --- Lightning Grid Vector Engine (Observer Layout Fix) ---
         function initLightningRadarCanvas() {
             const canvas = document.getElementById('lightningCanvas');
             if(!canvas) return;
             const ctx = canvas.getContext('2d');
             let strikes = [];
             
-            // FIX FIXED: Utilizes a ResizeObserver block to recalculate dynamic viewport layout boundaries cleanly
             const parentBlock = canvas.parentElement;
             
             function runResizeLogic() {
@@ -591,7 +687,7 @@
                 window.requestAnimationFrame(runResizeLogic);
             });
             layoutPanelObserver.observe(parentBlock);
-            runResizeLogic(); // Run initial calculation loop
+            runResizeLogic(); 
 
             function cycleStrikes() {
                 if(!document.getElementById('lightningCanvas')) {
@@ -635,6 +731,7 @@
             document.getElementById('mob-node-lightning').innerHTML = `<div class="lightning-container-block"><canvas id="lightningCanvas" class="lightning-map-canvas"></canvas></div>`;
             
             fetchNWSForecast();
+            fetchAirQualityData();
             fetchAllHazardsTelemetry();
             fetchSchuylkillHydrology();
             setTimeout(initLightningRadarCanvas, 500);
@@ -651,7 +748,8 @@
                             width: 33,
                             content: [
                                 { type: 'component', componentName: 'windyMapLeft', title: 'PRIMARY WINDY CONSOLE — REGIONAL ALPHA' },
-                                { type: 'component', componentName: 'localForecast', title: '7-DAY GEOGRAPHIC SYNOPTIC OUTLOOK (19428)' }
+                                { type: 'component', componentName: 'localForecast', title: '7-DAY GEOGRAPHIC SYNOPTIC OUTLOOK (19428)' },
+                                { type: 'component', componentName: 'airQualityPanel', title: 'AIR QUALITY INDEX SPECTRUM (AIRNOW 19428)' }
                             ]
                         },
                         {
@@ -682,6 +780,11 @@
             layout.registerComponent('localForecast', function(c) {
                 c.getElement().html(`<div class="weather-component" id="forecast-container">Connecting to synoptic timeline grids...</div>`);
                 c.on('open', fetchNWSForecast);
+            });
+
+            layout.registerComponent('airQualityPanel', function(c) {
+                c.getElement().html(`<div class="weather-component" id="aqi-container-target">Interrogating AirNow environmental sensor array frames...</div>`);
+                c.on('open', fetchAirQualityData);
             });
             
             layout.registerComponent('hazardsPanel', function(c) {
@@ -719,6 +822,7 @@
             if(countdownVal <= 0) {
                 countdownVal = 120;
                 fetchNWSForecast();
+                fetchAirQualityData();
                 fetchAllHazardsTelemetry();
                 fetchSchuylkillHydrology();
             }
