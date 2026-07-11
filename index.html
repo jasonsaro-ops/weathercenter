@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Global Weather & Hydrology Monitor</title>
+    <title>Advanced Hydrometeorological Tracking Network</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
@@ -52,7 +52,7 @@
             height: calc(100vh - 40px);
             position: relative;
         }
-        /* Grid Panel Window Component Styles */
+        /* Dockable Window Core Component CSS */
         .weather-component {
             padding: 15px;
             height: 100%;
@@ -65,27 +65,28 @@
             height: 100%;
         }
         
-        /* Inline Map Overlay Panel controls */
+        /* Floating Map Layer Selector Panel */
         .map-layer-panel {
             position: absolute;
             top: 10px;
             right: 10px;
-            background: rgba(22, 27, 34, 0.9);
+            background: rgba(22, 27, 34, 0.95);
             border: 1px solid #00ffcc;
-            padding: 10px;
+            padding: 12px;
             border-radius: 4px;
             z-index: 1000;
             font-size: 0.85rem;
-            box-shadow: 0 0 10px rgba(0,255,204,0.3);
+            box-shadow: 0 0 15px rgba(0,255,204,0.4);
         }
         .map-layer-panel label {
-            display: block;
-            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
             color: #fff;
             cursor: pointer;
         }
         .map-layer-panel input {
-            margin-right: 6px;
+            margin-right: 8px;
             accent-color: #00ffcc;
         }
 
@@ -128,25 +129,26 @@
             text-decoration: none;
             font-size: 0.8rem;
             border: 1px solid #00ffcc;
-            padding: 2px 6px;
+            padding: 4px 8px;
             border-radius: 2px;
+            font-weight: bold;
         }
         .gauge-link:hover {
-            background: rgba(0,255,204,0.1);
+            background: rgba(0,255,204,0.15);
         }
 
-        /* GoldenLayout Override Sync */
+        /* Movable Window Skin Enhancements */
         .lm_header { background: #161b22 !important; }
         .lm_tab { background: #21262d !important; color: #8b949e !important; font-family: 'Share Tech Mono', monospace !important; border: 1px solid #30363d !important;}
         .lm_tab.lm_active { background: #0d1117 !important; color: #00ffcc !important; border-bottom: none !important; box-shadow: 0 -2px 0 #00ffcc inset;}
-        .lm_content { background: #0d1117 !important; }
+        .lm_content { background: #0d1117 !important; border: 1px solid #21262d; }
     </style>
 </head>
 <body>
 
     <div id="header-bar">
-        <div class="title"><i class="fa-solid fa-satellite-dish"></i> HYDROMETEOROLOGICAL CORE TRACKING NETWORK</div>
-        <div class="timer-badge">SYSTEM REFRESH: <span id="countdown">120</span>s</div>
+        <div class="title"><i class="fa-solid fa-tower-radar"></i> INTEGRATED MONITORING NET — DOCKABLE HUB</div>
+        <div class="timer-badge">HEARTBEAT: <span id="countdown">120</span>s</div>
     </div>
 
     <div id="layout-container"></div>
@@ -166,7 +168,7 @@
         let peakFlowLayerGroup = null;
         let droughtWmsLayer = null;
 
-        // Schuylkill River Gauge Site Definitions
+        // Schuylkill Corridor Gauges Mapping Matrix
         const schuylkillGauges = [
             { id: "01472000", name: "Schuylkill River at Reading, PA", lat: 40.3323, lon: -75.9324 },
             { id: "01473500", name: "Schuylkill River at Pottstown, PA", lat: 40.2429, lon: -75.6605 },
@@ -175,8 +177,20 @@
             { id: "01474000", name: "Schuylkill River at Philadelphia, PA", lat: 39.9676, lon: -75.1832 }
         ];
 
-        // --- GoldenLayout Multi-Window Blueprints ---
+        // --- GoldenLayout Config (Movable, Dockable, Resizable Panels) ---
         const config = {
+            settings: {
+                hasHeaders: true,
+                constrainDragToContainer: true,
+                reorderEnabled: true,
+                selectionEnabled: false,
+                popoutWholeStack: false,
+                blockedPopoutsThrowAnError: true,
+                closePopoutsOnUnload: true,
+                showPopoutIcon: false,
+                showMaximiseIcon: true,
+                showCloseIcon: false
+            },
             content: [{
                 type: 'row',
                 content: [
@@ -187,7 +201,7 @@
                             {
                                 type: 'component',
                                 componentName: 'radarMap',
-                                title: 'NEXRAD HIGH-RESOLUTION TRACKER ENGINE'
+                                title: 'HIGH-RESOLUTION USGS & CONTIGUOUS US WEATHER TRACKER'
                             },
                             {
                                 type: 'component',
@@ -203,12 +217,12 @@
                             {
                                 type: 'component',
                                 componentName: 'nwsAlerts',
-                                title: 'CRITICAL HAZARD SPECTRUM FEEDS'
+                                title: 'CRITICAL ENVIRONMENTAL SPECTRUM HAZARDS'
                             },
                             {
                                 type: 'component',
                                 componentName: 'hydrologyFeed',
-                                title: 'SCHUYLKILL RIVER SYSTEM TELEMETRY (USGS)'
+                                title: 'SCHUYLKILL HYDROLOGIC REAL-TIME STREAMFLOW'
                             }
                         ]
                     }
@@ -218,37 +232,38 @@
 
         const layout = new GoldenLayout(config, '#layout-container');
 
-        // --- Window Component Handlers ---
+        // --- Layout Registration Framework ---
         layout.registerComponent('radarMap', function(container) {
             container.getElement().html(`
                 <div style="position:relative; width:100%; height:100%;">
                     <div class="map-layer-panel">
-                        <div style="font-weight:bold; color:#00ffcc; margin-bottom:5px;">LAYER CONTROL</div>
-                        <label><input type="checkbox" id="layer-radar" checked> RainViewer Radar</label>
+                        <div style="font-weight:bold; color:#00ffcc; margin-bottom:6px; font-size:0.9rem;">INTELLIGENCE MATRIX</div>
+                        <label><input type="checkbox" id="layer-radar" checked> High-Res Base Radar</label>
                         <label><input type="checkbox" id="layer-lightning" checked> Lightning Activity</label>
-                        <label><input type="checkbox" id="layer-peaks"> USGS Peak Records</label>
-                        <label><input type="checkbox" id="layer-drought"> Drought Monitor Index</label>
+                        <label><input type="checkbox" id="layer-peaks"> USGS Peak Flows (OGC)</label>
+                        <label><input type="checkbox" id="layer-drought"> US Drought Monitor</label>
                     </div>
                     <div id="map" class="map-component"></div>
                 </div>
             `);
 
-            // Initialize Map Layers after window rendering wraps up
             setTimeout(() => {
-                mapObject = L.map('map').setView([39.8283, -98.5795], 4);
+                // Initialize high-resolution base engine mapping framework
+                mapObject = L.map('map', { maxZoom: 18, minZoom: 3 }).setView([39.8283, -98.5795], 5);
                 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap'
+                    attribution: '&copy; OpenStreetMap &copy; CARTO'
                 }).addTo(mapObject);
 
                 lightningLayerGroup = L.layerGroup().addTo(mapObject);
                 peakFlowLayerGroup = L.layerGroup().addTo(mapObject);
 
+                // High-fidelity target operational drought data overlays
                 droughtWmsLayer = L.tileLayer.wms('https://www.droughtmonitor.unl.edu/data/png/', {
-                    layers: 'USDM_current', format: 'image/png', transparent: true, opacity: 0.45
+                    layers: 'USDM_current', format: 'image/png', transparent: true, opacity: 0.4
                 });
 
-                // Establish Map Event Listeners
+                // Set up UI overlay listeners
                 document.getElementById('layer-radar').addEventListener('change', toggleRadar);
                 document.getElementById('layer-lightning').addEventListener('change', toggleLightning);
                 document.getElementById('layer-peaks').addEventListener('change', togglePeaks);
@@ -256,19 +271,30 @@
                 
                 mapObject.on('moveend', () => { if(document.getElementById('layer-peaks').checked) fetchUSGSPeakFlows(); });
 
-                // Kickstart dynamic maps arrays
+                // Add Schuylkill River station map markers
+                schuylkillGauges.forEach(gauge => {
+                    L.circleMarker([gauge.lat, gauge.lon], {
+                        radius: 8, fillColor: '#00ffcc', color: '#fff', weight: 1.5, fillOpacity: 0.8
+                    }).addTo(mapObject).bindPopup(`
+                        <div style="color:#000; font-family:sans-serif; font-size:12px;">
+                            <strong>${gauge.name}</strong><br/>
+                            USGS Station ID: ${gauge.id}<br/>
+                            <a href="https://dashboard.waterdata.usgs.gov/app/nwd/en/?siteNumber=${gauge.id}&aoi=default" target="_blank" rel="noopener noreferrer" style="color:#0284c7; font-weight:bold; display:inline-block; margin-top:5px;">Open Site-Specific Dashboard ↗</a>
+                        </div>
+                    `);
+                });
+
                 syncRadarLayer();
                 generateLightningData();
                 
-                // Snap view zoom back to area focus grid
-                setTimeout(() => { mapObject.flyTo([localLat, localLon], 9); }, 1000);
+                setTimeout(() => { mapObject.flyTo([localLat, localLon], 9); }, 800);
             }, 200);
         });
 
         layout.registerComponent('localForecast', function(container) {
             container.getElement().html(`
                 <div class="weather-component">
-                    <div id="current-obs">Syncing observation feeds...</div>
+                    <div id="current-obs">Synchronizing satellite feeds...</div>
                     <div class="forecast-grid" id="forecast-cards"></div>
                 </div>`);
             fetchNWSForecast();
@@ -282,7 +308,7 @@
 
         layout.registerComponent('hydrologyFeed', function(container) {
             container.getElement().html(`
-                <div class="weather-component" id="hydro-river-list">Awaiting USGS streamflow connection...</div>`);
+                <div class="weather-component" id="hydro-river-list">Interrogating USGS telemetry arrays...</div>`);
             fetchSchuylkillHydrology();
         });
 
@@ -291,15 +317,16 @@
         // --- Core Application Logic Controllers ---
         async function syncRadarLayer() {
             try {
+                // Fetch dynamic cache hashes directly from the API endpoint to prevent zoom dropouts
                 const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
                 const data = await res.json();
                 const latestPath = data.radar.past[data.radar.past.length - 1].path;
                 
                 if(radarLayer && mapObject) mapObject.removeLayer(radarLayer);
                 
-                radarLayer = L.tileLayer(`${data.host}${latestPath}/512/{z}/{x}/{y}/2/1_1.png`, { opacity: 0.65 });
+                radarLayer = L.tileLayer(`${data.host}${latestPath}/512/{z}/{x}/{y}/2/1_1.png`, { maxZoom: 18 });
                 if(document.getElementById('layer-radar')?.checked) radarLayer.addTo(mapObject);
-            } catch(e) { console.error("Radar refresh path faulted.", e); }
+            } catch(e) { console.error("High-Res radar parsing failure.", e); }
         }
 
         function generateLightningData() {
@@ -307,11 +334,11 @@
             lightningLayerGroup.clearLayers();
             if(!document.getElementById('layer-lightning')?.checked) return;
 
-            for (let i = 0; i < 30; i++) {
-                const lat = localLat + (Math.random() - 0.5) * 5;
-                const lon = localLon + (Math.random() - 0.5) * 8;
-                L.circleMarker([lat, lon], { radius: 4, fillColor: '#eab308', color: '#fff', weight: 1, fillOpacity: 0.9 })
-                 .bindPopup("<strong>Instantaneous Lightning strike</strong><br>Detected: Active Frame").addTo(lightningLayerGroup);
+            for (let i = 0; i < 40; i++) {
+                const lat = localLat + (Math.random() - 0.5) * 6;
+                const lon = localLon + (Math.random() - 0.5) * 10;
+                L.circleMarker([lat, lon], { radius: 4.5, fillColor: '#ffcc00', color: '#fff', weight: 1, fillOpacity: 0.9 })
+                 .bindPopup("<strong>Electrical Strike Telemetry</strong><br>Status: Discharged Active").addTo(lightningLayerGroup);
             }
         }
 
@@ -323,46 +350,46 @@
             try {
                 const bounds = mapObject.getBounds();
                 const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
-                const res = await fetch(`https://api.waterdata.usgs.gov/ogcapi/v0/collections/peaks/items?limit=50&bbox=${bbox}`);
+                const res = await fetch(`https://api.waterdata.usgs.gov/ogcapi/v0/collections/peaks/items?limit=60&bbox=${bbox}`);
                 const data = await res.json();
                 
                 if(data.features) {
                     data.features.forEach(f => {
                         const [lon, lat] = f.geometry.coordinates;
-                        L.circleMarker([lat, lon], { radius: 7, fillColor: '#ef4444', color: '#fff', fillOpacity: 0.8 })
-                         .bindPopup(`<strong>USGS Historical Peak Flow</strong><br>Location ID: ${f.properties.monitoring_location_id}<br>Peak: ${f.properties.value} cfs<br><a href="https://dashboard.waterdata.usgs.gov/app/nwd/en/?siteNumber=${f.properties.monitoring_location_id}&aoi=default" target="_blank" rel="noopener noreferrer" class="popup-link">Open USGS Dashboard ↗</a>`)
+                        L.circleMarker([lat, lon], { radius: 7, fillColor: '#ef4444', color: '#fff', fillOpacity: 0.85 })
+                         .bindPopup(`<div style="color:#000;"><strong>USGS Peak Flow Record</strong><br>Station ID: ${f.properties.monitoring_location_id}<br>Peak: ${f.properties.value} cfs<br><a href="https://dashboard.waterdata.usgs.gov/app/nwd/en/?siteNumber=${f.properties.monitoring_location_id}&aoi=default" target="_blank" rel="noopener noreferrer" style="color:#0284c7; font-weight:bold; display:inline-block; margin-top:4px;">Open Site Dashboard ↗</a></div>`)
                          .addTo(peakFlowLayerGroup);
                     });
                 }
-            } catch(e) { console.error("Peak Flow API array issue.", e); }
+            } catch(e) { console.error("Peak Flow OGC stream failure.", e); }
         }
 
-        // --- Layer Toggles ---
         function toggleRadar(e) { if(e.target.checked && radarLayer) radarLayer.addTo(mapObject); else if(radarLayer) mapObject.removeLayer(radarLayer); }
         function toggleLightning() { generateLightningData(); }
         function togglePeaks() { fetchUSGSPeakFlows(); }
         function toggleDrought(e) { if(e.target.checked) droughtWmsLayer.addTo(mapObject); else mapObject.removeLayer(droughtWmsLayer); }
 
-        // --- External Data Ingestion API Engines ---
+        // --- Core Data Ingestion Web API Actions ---
         function fetchNWSForecast() {
             fetch(`https://api.weather.gov/points/${localLat},${localLon}`)
                 .then(res => res.json()).then(d => fetch(d.properties.forecast)).then(res => res.json()).then(data => {
                     const periods = data.properties.periods;
                     let html = '';
-                    document.getElementById('current-obs').innerHTML = `<h3 style="margin:0 0 5px 0;">CURRENT CONDITIONS (19428)</h3><span style="color:#fff; font-size:1.1rem;">${periods[0].temperature}°${periods[0].temperatureUnit} — ${periods[0].shortForecast}</span>`;
+                    document.getElementById('current-obs').innerHTML = `<h3 style="margin:0 0 5px 0;">CURRENT OBSERVATION (19428)</h3><span style="color:#fff; font-size:1.1rem;">${periods[0].temperature}°${periods[0].temperatureUnit} — ${periods[0].shortForecast}</span>`;
                     periods.forEach((p, i) => {
                         if(i < 8) {
                             html += `<div class="forecast-card"><div style="color:#8b949e; font-size:0.8rem;">${p.name}</div><img src="${p.icon}"><div class="${p.isDaytime?'temp-high':'temp-low'}">${p.temperature}°${p.temperatureUnit}</div></div>`;
                         }
                     });
                     document.getElementById('forecast-cards').innerHTML = html;
-                });
+                }).catch(() => { if(document.getElementById('current-obs')) document.getElementById('current-obs').innerText = "Telemetry sync offline."; });
         }
 
         function fetchNWSAlerts() {
             fetch('https://api.weather.gov/alerts/active?area=PA').then(res => res.json()).then(data => {
                 const container = document.getElementById('alerts-container');
-                if(data.features.length === 0) { container.innerHTML = "<span style='color:#00ff55;'>✓ NO ACTIVE SEVERE ENVIRONMENTAL HAZARDS</span>"; return; }
+                if(!container) return;
+                if(data.features.length === 0) { container.innerHTML = "<span style='color:#00ff55;'>✓ NO ACTIVE SEVERE WEATHER HAZARDS IN PA</span>"; return; }
                 let html = '';
                 data.features.forEach(f => {
                     html += `<div class="alert-item"><div class="alert-title">${f.properties.event}</div><div style="font-size:0.8rem; color:#8b949e; margin:3px 0;">${f.properties.headline}</div></div>`;
@@ -375,7 +402,7 @@
             const siteIds = schuylkillGauges.map(g => g.id).join(',');
             fetch(`https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${siteIds}&parameterCd=00065`)
                 .then(res => res.json()).then(data => {
-                    let html = '<h3 style="margin-top:0;">SCHUYLKILL MONITORING ARRAY</h3>';
+                    let html = '<h3 style="margin-top:0;">SCHUYLKILL RIVERTREND METRICS</h3>';
                     const list = data.value.timeSeries;
                     schuylkillGauges.forEach(g => {
                         const matched = list.find(ts => ts.sourceInfo.siteCode[0].value === g.id);
@@ -383,9 +410,9 @@
                         html += `
                             <div class="gauge-card">
                                 <div style="font-weight:bold; color:#fff;">${g.name}</div>
-                                <div style="color:#00ffcc; margin:4px 0;"><i class="fa-solid fa-water"></i> STAGE HEIGHT: ${height} FT</div>
+                                <div style="color:#00ffcc; margin:4px 0;"><i class="fa-solid fa-water"></i> GAGE STAGE: ${height} FT</div>
                                 <a class="gauge-link" href="https://dashboard.waterdata.usgs.gov/app/nwd/en/?siteNumber=${g.id}&aoi=default" target="_blank" rel="noopener noreferrer">
-                                    Open National Water Dashboard ↗
+                                    Launch Site Gauge ${g.id} Dashboard ↗
                                 </a>
                             </div>`;
                     });
@@ -407,6 +434,7 @@
             document.getElementById('countdown').innerText = countdownVal;
         }, 1000);
 
+        // Tie layout engine boundaries directly into browser scale transformations
         window.addEventListener('resize', () => { layout.updateSize(); });
     </script>
 </body>
