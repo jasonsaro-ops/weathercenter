@@ -90,11 +90,33 @@ layout.registerComponent('hydrologyFeed', function(container) {
 });
 
 // Lightning Component with Live Map
-layout.registerComponent('lightningGrid', function(container) {
-    container.getElement().html(`<div id="lightningMapContainer" style="width:100%; height:100%;"></div>`);
-    container.on('shown', () => {
-        if (!lightningMap) initLightningRadarMap();
-        else lightningMap.invalidateSize();
+layout.registerComponent('lightningGrid', function(c) {
+    // 1. Create a dedicated container for the map
+    c.getElement().html('<div id="lightningMapContainer" style="width:100%; height:100%;"></div>');
+
+    c.on('open', () => {
+        // 2. Initialize the Map
+        lightningMap = L.map('lightningMapContainer', { zoomControl: false }).setView([localLat, localLon], 9);
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(lightningMap);
+
+        // 3. Add Bullseye Center
+        L.circleMarker([localLat, localLon], { color: '#ff5555', radius: 4 }).addTo(lightningMap);
+
+        // 4. Add 30-mile radius range rings (approx. 16km, 32km, 48km)
+        [16093.4, 32186.8, 48280.3].forEach(radius => {
+            L.circle([localLat, localLon], { 
+                radius: radius, 
+                color: '#00ffcc', 
+                weight: 1, 
+                fill: false, 
+                dashArray: '4, 4' 
+            }).addTo(lightningMap);
+        });
+    });
+
+    // 5. Ensure map updates when panel is resized
+    c.on('resize', () => {
+        if (lightningMap) lightningMap.invalidateSize();
     });
 });
 
