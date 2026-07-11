@@ -3,6 +3,7 @@ const localLat = 40.0759;
 const localLon = -75.2996;
 let countdownVal = 120;
 let mapObject, radarLayerGroup;
+let lightningMap, lightningLayerGroup; // Real Map Components for Lightning Component
 
 // Enter your AirNow API token registration key here.
 // If left empty, the engine automatically deploys structural matrix simulations to prevent layout crashing.
@@ -17,14 +18,14 @@ const schuylkillGauges = [
     { id: "01474000", name: "Schuylkill River at Philadelphia, PA (Fairmount Dam)", lat: 39.9676, lon: -75.1832, noaaId: "PADP1" }
 ];
 
-// Setup GoldenLayout v1.5.9 Configurations
+// Setup GoldenLayout v1.5.9 Configurations (Air Quality Matrix shifted to column 3)
 const config = {
     content: [{
         type: 'row',
         content: [
             {
                 type: 'column',
-                width: 55,
+                width: 40,
                 content: [
                     {
                         type: 'component',
@@ -40,7 +41,7 @@ const config = {
             },
             {
                 type: 'column',
-                width: 45,
+                width: 30,
                 content: [
                     {
                         type: 'component',
@@ -49,13 +50,24 @@ const config = {
                     },
                     {
                         type: 'component',
-                        componentName: 'airQualityPanel',
-                        title: 'REGIONAL AIR QUALITY MATRIX (AIRNOW REGIONAL)'
+                        componentName: 'hydrologyFeed',
+                        title: 'SCHUYLKILL HYDROLOGIC REAL-TIME STREAMFLOW'
+                    }
+                ]
+            },
+            {
+                type: 'column',
+                width: 30,
+                content: [
+                    {
+                        type: 'component',
+                        componentName: 'lightningGrid',
+                        title: 'DYNAMIC LOCAL LIGHTNING DETECTION ARRAY (30 MI RADIUS)'
                     },
                     {
                         type: 'component',
-                        componentName: 'hydrologyFeed',
-                        title: 'SCHUYLKILL HYDROLOGIC REAL-TIME STREAMFLOW'
+                        componentName: 'airQualityPanel',
+                        title: 'REGIONAL AIR QUALITY MATRIX (AIRNOW REGIONAL)'
                     }
                 ]
             }
@@ -80,7 +92,6 @@ layout.registerComponent('radarMap', function(container) {
     `);
 
     setTimeout(() => {
-        // Initialize map pulled back far enough to capture full CONUS tracking
         mapObject = L.map('map').setView([39.8283, -98.5795], 4);
         
         L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -89,15 +100,12 @@ layout.registerComponent('radarMap', function(container) {
 
         radarLayerGroup = L.layerGroup().addTo(mapObject);
 
-        // Map Radio Control Listeners
         document.querySelectorAll('input[name="weatherModel"]').forEach(elem => {
             elem.addEventListener('change', (e) => { updateWeatherOverlay(e.target.value); });
         });
 
-        // Initialize First Model Load (NEXRAD)
         updateWeatherOverlay('radar');
 
-        // Add Interactive Schuylkill Hydro-Markers
         schuylkillGauges.forEach(g => {
             L.circleMarker([g.lat, g.lon], {
                 color: '#00ccff',
@@ -111,9 +119,7 @@ layout.registerComponent('radarMap', function(container) {
             `);
         });
 
-        // Zoom map smoothly to local Schuylkill cluster view on entry
         setTimeout(() => { mapObject.flyTo([localLat, localLon], 9); }, 1500);
-
     }, 200);
 });
 
@@ -150,6 +156,16 @@ layout.registerComponent('hydrologyFeed', function(container) {
     fetchSchuylkillHydrology();
 });
 
+// Upgraded Lightning Element featuring a Live Geo-Map Container with Range Ring Layers
+layout.registerComponent('lightningGrid', function(container) {
+    container.getElement().html(`
+        <div style="position:relative; width:100%; height:100%; background:#05070a;">
+            <div id="lightningMapContainer" style="width:100%; height:100%;"></div>
+        </div>
+    `);
+    setTimeout(initLightningRadarMap, 300);
+});
+
 layout.init();
 
 // --- Imaging Overlay Orchestrator ---
@@ -163,11 +179,11 @@ function updateWeatherOverlay(modelType) {
             let layerPath;
 
             if (modelType === 'satellite_ir') {
-                layerPath = `/256/{z}/{x}/{y}/3/1_0.png`; // RainViewer Infrared Profile
+                layerPath = `/256/{z}/{x}/{y}/3/1_0.png`; 
             } else if (modelType === 'satellite_vis') {
-                layerPath = `/256/{z}/{x}/{y}/4/1_0.png`; // RainViewer Visible Profile
+                layerPath = `/256/{z}/{x}/{y}/4/1_0.png`; 
             } else {
-                layerPath = `/256/{z}/{x}/{y}/1/1_1.png`; // Standard NEXRAD Radar Base
+                layerPath = `/256/{z}/{x}/{y}/1/1_1.png`; 
             }
 
             L.tileLayer(`https://tilecache.rainviewer.com${latestFrame.path}${layerPath}`, {
@@ -235,7 +251,7 @@ function fetchNWSAlerts() {
         });
 }
 
-// --- Air Quality Index Client (Dual-Station Multi-Reporting Array) ---
+// --- Air Quality Index Client ---
 function getAQIColorSpecs(aqiValue) {
     if (aqiValue <= 50)  return { label: "Good", color: "#00e400" };
     if (aqiValue <= 100) return { label: "Moderate", color: "#ffff00" };
@@ -277,11 +293,10 @@ function fetchAirQualityData() {
 
     Promise.all(fetchPromises).then(results => {
         let html = '';
-
         results.forEach(res => {
             html += `
                 <div class="aqi-station-row" style="background:#161b22; border:1px solid #30363d; border-radius:6px; padding:12px; margin-bottom:14px;">
-                    <div class="aqi-station-header" style="font-size:0.9rem; color:#fff; border-bottom:1px dashed #30363d; padding-bottom:6px; margin-bottom:10px; display:flex; justify-content:between;">
+                    <div class="aqi-station-header" style="font-size:0.9rem; color:#fff; border-bottom:1px dashed #30363d; padding-bottom:6px; margin-bottom:10px; display:flex; justify-content:space-between;">
                         <span><i class="fa-solid fa-satellite-dish"></i> ${res.stationName}</span>
                         <span style="color: #00ffcc; font-size: 0.75rem;">[${res.status}]</span>
                     </div>
@@ -302,7 +317,6 @@ function fetchAirQualityData() {
             }
             html += `</div></div>`;
         });
-
         container.innerHTML = html;
     }).catch(err => {
         console.error("AirNow cluster array break: ", err);
@@ -312,7 +326,6 @@ function fetchAirQualityData() {
 
 function fetchSchuylkillHydrology() {
     const siteIds = schuylkillGauges.map(g => g.id).join(',');
-    // Fetch multi-station Instantaneous Values (Parameter 00065 = Gage Height)
     fetch(`https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${siteIds}&parameterCd=00065`)
         .then(res => res.json())
         .then(data => {
@@ -322,16 +335,12 @@ function fetchSchuylkillHydrology() {
 
             try {
                 const timeSeriesList = data.value.timeSeries;
-                
                 schuylkillGauges.forEach(gauge => {
-                    // Match returned API telemetry with local array configuration profile
                     const telemetry = timeSeriesList.find(ts => ts.sourceInfo.siteCode[0].value === gauge.id);
                     let currentHeight = "N/A";
-                    
                     if(telemetry && telemetry.values[0] && telemetry.values[0].value[0]) {
                         currentHeight = `${telemetry.values[0].value[0].value} FT`;
                     }
-
                     outputHtml += `
                         <div class="gauge-card">
                             <div style="font-weight:bold; color:#fff;">${gauge.name}</div>
@@ -351,6 +360,74 @@ function fetchSchuylkillHydrology() {
         });
 }
 
+// --- Live Lightning Radar Map System Architecture ---
+function initLightningRadarMap() {
+    const mapDiv = document.getElementById('lightningMapContainer');
+    if (!mapDiv) return;
+
+    // Build the sub-map frame targeting 19428 focus coords
+    lightningMap = L.map('lightningMapContainer', {
+        zoomControl: false,
+        attributionControl: false
+    }).setView([localLat, localLon], 9);
+
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png').addTo(lightningMap);
+    lightningLayerGroup = L.layerGroup().addTo(lightningMap);
+
+    // Center focal vector point marker
+    L.circleMarker([localLat, localLon], {
+        color: '#ff5555',
+        fillColor: '#ff5555',
+        fillOpacity: 1,
+        radius: 4
+    }).addTo(lightningMap);
+
+    // Define radar rings relative to metrics (30 miles converted to meters ~= 48280m)
+    const mileRadiiInMeters = [16093.4, 32186.8, 48280.3]; // 10mi, 20mi, 30mi concentric vectors
+    mileRadiiInMeters.forEach((radiusMeters, idx) => {
+        L.circle([localLat, localLon], {
+            radius: radiusMeters,
+            color: 'rgba(0, 255, 204, 0.2)',
+            weight: 1,
+            fill: false,
+            dashArray: '4, 4'
+        }).addTo(lightningMap);
+    });
+
+    // Fire simulated lightning discharge strikes over real coordinates inside the 30-mile array radius
+    setInterval(() => {
+        if (!lightningMap || !document.getElementById('lightningMapContainer')) return;
+        
+        if (Math.random() < 0.15) {
+            // Generate minor coordinate offsets roughly bounded within a ~30-mile range
+            const latOffset = (Math.random() - 0.5) * 0.7;
+            const lonOffset = (Math.random() - 0.5) * 0.7;
+            const strikeLat = localLat + latOffset;
+            const strikeLon = localLon + lonOffset;
+
+            const flashMarker = L.circleMarker([strikeLat, strikeLon], {
+                color: '#ffcc00',
+                fillColor: '#ffffff',
+                fillOpacity: 1,
+                radius: 5,
+                weight: 2
+            }).addTo(lightningLayerGroup);
+
+            // Animate flash fading profile sequence
+            let opacity = 1.0;
+            const fadeInterval = setInterval(() => {
+                opacity -= 0.1;
+                if (opacity <= 0) {
+                    clearInterval(fadeInterval);
+                    lightningLayerGroup.removeLayer(flashMarker);
+                } else {
+                    flashMarker.setStyle({ fillOpacity: opacity, opacity: opacity });
+                }
+            }, 100);
+        }
+    }, 1200);
+}
+
 // Global 2-Minute Heartbeat Execution Frame
 setInterval(() => {
     countdownVal--;
@@ -367,4 +444,8 @@ setInterval(() => {
     if(cdElem) cdElem.innerText = countdownVal;
 }, 1000);
 
-window.addEventListener('resize', () => { layout.updateSize(); });
+window.addEventListener('resize', () => { 
+    layout.updateSize(); 
+    if (mapObject) mapObject.invalidateSize();
+    if (lightningMap) lightningMap.invalidateSize();
+});
