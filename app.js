@@ -144,3 +144,13 @@ window.addEventListener('resize', () => {
     if (mapObject) mapObject.invalidateSize();
     if (lightningMap) lightningMap.invalidateSize();
 });
+// Add this to initialize audio after a user interaction
+document.addEventListener('click', () => {
+    if (window.AudioContext || window.webkitAudioContext) {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') {
+            audioCtx.resume();
+            console.log("Audio system resumed by user gesture.");
+        }
+    }
+}, { once: true }); // Only runs on the first click
