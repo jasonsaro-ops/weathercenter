@@ -200,16 +200,22 @@
             margin-bottom: 10px;
             border-radius: 4px;
         }
-        .gauge-link {
+        .gauge-btn {
             display: inline-block;
             margin-top: 6px;
             color: #00ffcc;
-            text-decoration: none;
-            font-size: 0.75rem;
+            background: none;
             border: 1px solid #00ffcc;
             padding: 4px 8px;
             border-radius: 2px;
             font-weight: bold;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .gauge-btn:hover {
+            background: rgba(0, 255, 204, 0.1);
         }
         
         #lightning-matrix-container {
@@ -244,7 +250,7 @@
             border: 2px solid #00ffcc;
             width: 90%;
             max-width: 650px;
-            max-height: 80vh;
+            max-height: 85vh;
             border-radius: 6px;
             box-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
             display: flex;
@@ -278,7 +284,6 @@
             color: #fff;
             font-size: 0.95rem;
             line-height: 1.6;
-            white-space: pre-wrap;
         }
 
         /* Skin Tuning for Window Panels */
@@ -517,12 +522,30 @@
                             <div class="gauge-card">
                                 <div style="font-weight:bold; color:#fff; font-size:0.95rem;">${g.name}</div>
                                 <div style="color:#00ffcc; margin:5px 0; font-size:0.9rem;"><i class="fa-solid fa-water"></i> CURRENT STAGE: ${height} FT</div>
-                                <a class="gauge-link" href="https://waterdata.usgs.gov/monitoring-location/${g.id}/#parameterCode=00065&period=P7D" target="_blank" rel="noopener noreferrer">Analyze Site Station ${g.id} Metrics ↗</a>
+                                <button class="gauge-btn" onclick="openHydrographModal('${g.id}', '${g.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-chart-line"></i> View Hydrograph Array</button>
                             </div>`;
                     });
                     const container = document.getElementById(isMobileDevice ? 'mob-node-hydro' : 'hydro-river-list');
                     if(container) container.innerHTML = html;
                 });
+        }
+
+        // --- Internal USGS Hydrograph Window Handler ---
+        function openHydrographModal(stationId, stationName) {
+            const hydrographUrl = `https://waterdata.usgs.gov/nwisweb/graph?agency_cd=USGS&site_no=${stationId}&parm_cd=00065&period=7`;
+            const modalHTML = `
+                <div style="text-align: center; background: #0d1117; padding: 10px; border-radius: 4px; border: 1px solid #30363d;">
+                    <div style="color: #8b949e; font-size: 0.85rem; margin-bottom: 10px; text-align: left;">
+                        <i class="fa-solid fa-network-wired"></i> STATION ID: ${stationId} // PARAM: 00065 (GAGE HEIGHT)
+                    </div>
+                    <img src="${hydrographUrl}" alt="USGS Hydrograph" style="width: 100%; max-width: 600px; height: auto; border: 1px solid #21262d; border-radius: 2px;">
+                    <div style="margin-top: 15px; text-align: right;">
+                        <a href="https://waterdata.usgs.gov/monitoring-location/${stationId}/#parameterCode=00065&period=P7D" target="_blank" rel="noopener noreferrer" style="color: #00ffcc; font-size: 0.8rem; text-decoration: none; border: 1px solid #00ffcc; padding: 5px 10px; border-radius: 2px;">
+                            Access Advanced Data Dashboard ↗
+                        </a>
+                    </div>
+                </div>`;
+            openFloatingModal(`USGS HYDROLOGIC FEED: ${stationName}`, modalHTML);
         }
 
         // --- Simulated Radar Canvas Strike System ---
@@ -540,7 +563,7 @@
             resizeCanvas();
 
             function cycleStrikes() {
-                if(!document.getElementById('lightningCanvas')) return; // Break animation loop loop if node falls off-screen
+                if(!document.getElementById('lightningCanvas')) return; 
                 if (Math.random() < 0.15) {
                     let angle = Math.random() * Math.PI * 2;
                     let radius = Math.random() * 80; 
@@ -608,7 +631,6 @@
                 }]
             };
 
-            // FIX: Explicitly target via jQuery selector object instead of plain ID string to prevent canvas freeze
             const layout = new GoldenLayout(config, $('#desktopLayoutContainer'));
             
             layout.registerComponent('windyMapLeft', function(c) { c.getElement().html(generateWindyConsoleMarkup('windy-left-iframe')); });
