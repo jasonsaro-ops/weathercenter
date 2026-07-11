@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Integrated Weather Monitor Hub Engine</title>
+    <!-- Core UI Framework Kits -->
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Ultra-Stable Core Layout Layouts via jsDelivr -->
     <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-base.css" />
     <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-dark-theme.css" />
     
@@ -147,6 +149,33 @@
             color: #00ffcc;
             background: rgba(0,255,204,0.15);
         }
+        
+        .windy-control-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(22, 27, 34, 0.85);
+            border: 1px solid #30363d;
+            padding: 6px;
+            border-radius: 4px;
+            z-index: 99;
+        }
+        .windy-control-panel div { font-size: 0.65rem; color: #8b949e; margin-bottom: 4px; font-weight: bold; }
+        .windy-btn {
+            display: block;
+            width: 120px;
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #8b949e;
+            padding: 3px 5px;
+            margin-bottom: 3px;
+            border-radius: 3px;
+            cursor: pointer;
+            text-align: left;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.65rem;
+        }
+        .windy-btn.active { border-color: #00ffcc; color: #00ffcc; }
 
         .alert-item {
             border-left: 4px solid #ff3333;
@@ -186,14 +215,35 @@
             margin-bottom: 10px;
             border-radius: 4px;
         }
-        
-        .lightning-map-canvas {
+        .gauge-btn {
+            background: #21262d;
+            border: 1px solid #30363d;
+            color: #00ffcc;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Share Tech Mono', monospace;
+            font-size: 0.8rem;
             width: 100%;
-            height: calc(100vh - 100px);
+            text-align: left;
+            transition: background 0.2s;
+        }
+        .gauge-btn:hover { background: rgba(0,255,204,0.1); border-color: #00ffcc; }
+        
+        /* Fixed Canvas Architecture Wrap */
+        .lightning-container-block {
+            width: 100%;
+            height: 100%;
+            position: relative;
             background: #05070a;
+            overflow: hidden;
+        }
+        .lightning-map-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
             display: block;
         }
-        #mob-node-lightning .lightning-map-canvas { height: 250px; }
 
         /* Popups Engine */
         .hub-modal {
@@ -210,7 +260,7 @@
             background: #161b22;
             border: 2px solid #00ffcc;
             width: 95%;
-            max-width: 750px;
+            max-width: 850px;
             max-height: 85vh;
             border-radius: 6px;
             display: flex;
@@ -250,17 +300,20 @@
         <div class="timer-badge">ARRAY CYCLE: <span id="countdown">120</span>s</div>
     </div>
 
+    <!-- Desktop Viewport Workspace -->
     <div id="desktopLayoutContainer"></div>
     
+    <!-- Mobile Viewport Workspace -->
     <div id="mobileLayoutContainer">
         <div class="mobile-card"><div class="mobile-card-title">WINDY REGIONAL ALPHA</div><div class="mobile-card-body mobile-map-height" id="mob-node-mapleft"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">WINDY REGIONAL BRAVO</div><div class="mobile-card-body mobile-map-height" id="mob-node-mapright"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">7-DAY SYNOPTIC OUTLOOK</div><div class="mobile-card-body" id="mob-node-forecast"></div></div>
         <div class="mobile-card"><div class="mobile-card-title">CRITICAL HAZARDS SPECTRUM</div><div class="mobile-card-body" id="mob-node-hazards"></div></div>
-        <div class="mobile-card"><div class="mobile-card-title">LIGHTNING ARRIVAL RADAR</div><div class="mobile-card-body" id="mob-node-lightning"></div></div>
-        <div class="mobile-card"><div class="mobile-card-title">SCHUYLKILL HYDROLOGIC telemetry</div><div class="mobile-card-body" id="mob-node-hydro"></div></div>
+        <div class="mobile-card"><div class="mobile-card-title">LIGHTNING ARRIVAL RADAR</div><div class="mobile-card-body mobile-map-height" id="mob-node-lightning"></div></div>
+        <div class="mobile-card"><div class="mobile-card-title">SCHUYLKILL HYDROLOGIC TELEMETRY</div><div class="mobile-card-body" id="mob-node-hydro"></div></div>
     </div>
 
+    <!-- System Modal Framework -->
     <div id="hubFloatingModal" class="hub-modal">
         <div class="hub-modal-content">
             <div class="hub-modal-header">
@@ -271,6 +324,7 @@
         </div>
     </div>
 
+    <!-- Framework Infrastructure Engine Dependencies -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/dist/goldenlayout.min.js"></script>
     
@@ -281,7 +335,7 @@
         let trackedAlertCount = -1; 
         let globalForecastDataCache = null;
         let globalActiveAlertsCache = {};
-        let activeHazardFilter = 'all'; // Matrix options: 'all', 'nws', 'spc'
+        let activeHazardFilter = 'all'; 
         
         const isMobileDevice = window.innerWidth < 768;
 
@@ -289,7 +343,7 @@
             { id: "01472000", name: "Schuylkill River at Reading, PA" },
             { id: "01473500", name: "Schuylkill River at Pottstown, PA" },
             { id: "01474500", name: "Schuylkill River at Norristown, PA" },
-            { id: "01474703", name: "Schuylkill River at Conshohocken, PA" },
+            { id: "01473730", name: "Schuylkill River at Conshohocken, PA" },
             { id: "01474000", name: "Schuylkill River at Philadelphia, PA" }
         ];
 
@@ -352,12 +406,10 @@
                 .then(data => {
                     globalForecastDataCache = data.properties.periods;
                     const grid = document.getElementById('forecast-cards') || document.getElementById('mob-node-forecast');
-                    if(!grid) return;
-
+                    
                     let html = isMobileDevice ? '' : `<div id="current-obs" style="margin-bottom:15px; font-size:1.1rem; color:#fff; padding:10px; background:#161b22; border:1px solid #30363d; border-radius:4px;">CURRENT CONTEXT: ${globalForecastDataCache[0].temperature}°${globalForecastDataCache[0].temperatureUnit} — ${globalForecastDataCache[0].shortForecast}</div>`;
                     html += `<div class="forecast-grid">`;
                     
-                    // Displays full extended timeline (all 14 cycles cleanly mapping the full 7-day spectrum)
                     globalForecastDataCache.forEach((p, i) => {
                         html += `
                         <div class="forecast-card" onclick="openForecastDetails(${i})">
@@ -369,10 +421,13 @@
                     });
                     html += `</div>`;
                     
-                    const el = document.getElementById('forecast-container');
-                    if (isMobileDevice) { document.getElementById('mob-node-forecast').innerHTML = html; }
-                    else if (el) { el.innerHTML = html; }
-                });
+                    if (isMobileDevice) { 
+                        document.getElementById('mob-node-forecast').innerHTML = html; 
+                    } else {
+                        const el = document.getElementById('forecast-container');
+                        if (el) el.innerHTML = html;
+                    }
+                }).catch(err => console.error("Forecast fetch anomaly: ", err));
         }
 
         function openForecastDetails(index) {
@@ -384,7 +439,7 @@
                     <h2 style="margin: 5px 0; color:#fff;">${period.temperature}°${period.temperatureUnit}</h2>
                     <div style="color:#ffcc00; font-weight:bold; letter-spacing:1px;">${period.shortForecast}</div>
                 </div>
-                <div style="border-top: 1px solid #30363d; padding-top: 15px; color:#c9d1d9; font-family: monospace;">
+                <div style="border-top: 1px solid #30363d; padding-top: 15px; color:#c9d1d9; font-family: monospace; line-height: 1.6;">
                     ${period.detailedForecast}
                 </div>`;
             openFloatingModal(`${period.name} METEOROLOGICAL SPECTRUM DETAILS`, modalHTML);
@@ -401,19 +456,17 @@
         }
 
         function fetchAllHazardsTelemetry() {
-            // Simultaneously pooling cross-agency data matrices
             Promise.all([
                 fetch('https://api.weather.gov/alerts/active?area=PA').then(res => res.json()).catch(() => ({features:[]})),
-                fetch('https://api.weather.gov/alerts/active?zone=PAZ044').then(res => res.json()).catch(() => ({features:[]})) // Core local zone secondary validation channel
+                fetch('https://api.weather.gov/alerts/active?zone=PAZ044').then(res => res.json()).catch(() => ({features:[]})) 
             ]).then(([primaryNWS, zoneData]) => {
                 const combined = [...primaryNWS.features, ...zoneData.features];
                 const uniqueAlerts = Array.from(new Map(combined.map(item => [item.properties.id || Math.random(), item])).values());
                 
                 globalActiveAlertsCache = {};
                 
-                // Pure simulation processing block for Storm Prediction Center mesh-data endpoints 
-                // injected dynamically to feed structural alerts for the 19428 sector when active
-                if(Math.random() > 0.5) {
+                // Active Convective Telemetry Simulation (SPC Matrix Channels)
+                if(Math.random() > 0.4) {
                     globalActiveAlertsCache['SPC-WATCH-04'] = {
                         source: 'spc',
                         event: 'SPC Convective Mesoscale Matrix Risk',
@@ -438,7 +491,7 @@
                 trackedAlertCount = Object.keys(globalActiveAlertsCache).length;
 
                 renderHazardsDisplay();
-            });
+            }).catch(err => console.error("Hazards interface break: ", err));
         }
 
         function renderHazardsDisplay() {
@@ -490,7 +543,7 @@
             openFloatingModal(`INTEGRATED FEEDS TELEMETRY: ${alertData.event.toUpperCase()}`, body);
         }
 
-        // --- Hydrology Array Framework via Stream embeds ---
+        // --- Hydrology Array Framework via National Water Dashboard ---
         function fetchSchuylkillHydrology() {
             let html = '<h3 style="margin-top:0; color:#00ffcc; letter-spacing:1px; font-size:0.9rem;">HYDRO-CORRIDOR SECTOR STREAMFLOW MANAGEMENT</h3>';
             schuylkillGauges.forEach(g => {
@@ -498,42 +551,53 @@
                     <div class="gauge-card">
                         <div style="font-weight:bold; color:#fff; font-size:0.9rem;">${g.name}</div>
                         <div style="color:#00ffcc; margin:5px 0 8px 0; font-size:0.8rem;"><i class="fa-solid fa-water"></i> MONITOR STATION ID REFERENCE: ${g.id}</div>
-                        <button class="gauge-btn" onclick="openHydrographModal('${g.id}', '${g.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-chart-line"></i> Load Live Telemetry Dashboard Array</button>
+                        <button class="gauge-btn" onclick="openHydrographModal('${g.id}', '${g.name.replace(/'/g, "\\'")}')"><i class="fa-solid fa-chart-line"></i> Open National Water Dashboard Embed</button>
                     </div>`;
             });
             const container = document.getElementById(isMobileDevice ? 'mob-node-hydro' : 'hydro-river-list');
             if(container) container.innerHTML = html;
         }
 
-        // FIX: Replaced old image builder with secure USGS National Water Dashboard interactive context framing
+        // FIX FIXED: Routed cleanly through the official dashboard API graphing component to fix legacy 404/Object Not Found rules
         function openHydrographModal(stationId, stationName) {
-            const embedUrl = `https://dashboard.waterdata.usgs.gov/api/gwis/2.0/service/site/multimedia/USGS-${stationId}?period=P7D&parameterCode=00065`;
+            const embedUrl = `https://dashboard.waterdata.usgs.gov/api/gwis/2.1/service/site?agencyCode=USGS&siteNumber=${stationId}&open=plots&banner=false&pad=false`;
             const modalHTML = `
-                <div class="hydro-frame-wrapper" style="height: 480px;">
+                <div class="hydro-frame-wrapper" style="height: 520px;">
                     <iframe src="${embedUrl}" class="hydro-iframe" style="background:#fff; border-radius:4px;"></iframe>
                 </div>
                 <div style="margin-top: 12px; text-align: right; font-size:0.75rem;">
-                    <span style="color:#8b949e;">Secure cross-origin frame securely handled via USGS Web Data Array Framework</span>
+                    <span style="color:#8b949e;">Secure cross-origin frame securely handled via USGS National Water Dashboard Engine</span>
                 </div>`;
             openFloatingModal(`USGS WAVE MATRIX OUTLET: ${stationName}`, modalHTML);
         }
 
-        // --- Isolated Lightning Grid Vector Engine ---
+        // --- Lighning Grid Vector Engine (Observer Layout Fix) ---
         function initLightningRadarCanvas() {
             const canvas = document.getElementById('lightningCanvas');
             if(!canvas) return;
             const ctx = canvas.getContext('2d');
             let strikes = [];
             
-            function resizeCanvas() {
-                if(!canvas.parentElement) return;
-                canvas.width = canvas.parentElement.clientWidth;
-                canvas.height = canvas.parentElement.clientHeight || 200;
+            // FIX FIXED: Utilizes a ResizeObserver block to recalculate dynamic viewport layout boundaries cleanly
+            const parentBlock = canvas.parentElement;
+            
+            function runResizeLogic() {
+                if(!parentBlock) return;
+                canvas.width = parentBlock.clientWidth;
+                canvas.height = parentBlock.clientHeight || 250;
             }
-            resizeCanvas();
+            
+            const layoutPanelObserver = new ResizeObserver(() => {
+                window.requestAnimationFrame(runResizeLogic);
+            });
+            layoutPanelObserver.observe(parentBlock);
+            runResizeLogic(); // Run initial calculation loop
 
             function cycleStrikes() {
-                if(!document.getElementById('lightningCanvas')) return; 
+                if(!document.getElementById('lightningCanvas')) {
+                    layoutPanelObserver.disconnect();
+                    return; 
+                }
                 if (Math.random() < 0.12) {
                     let angle = Math.random() * Math.PI * 2;
                     let radius = Math.random() * (canvas.height / 2.3); 
@@ -559,17 +623,16 @@
                 requestAnimationFrame(cycleStrikes);
             }
             cycleStrikes();
-            window.addEventListener('resize', resizeCanvas);
         }
 
         // =========================================================================
-        // ROUTER SYSTEM WORKSPACE LOGIC INITIALIZATION
+        // INITIALIZATION AND ROUTER DISTRIBUTIONS
         // =========================================================================
         if (isMobileDevice) {
             document.getElementById('mobileLayoutContainer').style.display = 'block';
             document.getElementById('mob-node-mapleft').innerHTML = generateWindyConsoleMarkup('windy-mob-left');
             document.getElementById('mob-node-mapright').innerHTML = generateWindyConsoleMarkup('windy-mob-right');
-            document.getElementById('mob-node-lightning').innerHTML = `<canvas id="lightningCanvas" class="lightning-map-canvas"></canvas>`;
+            document.getElementById('mob-node-lightning').innerHTML = `<div class="lightning-container-block"><canvas id="lightningCanvas" class="lightning-map-canvas"></canvas></div>`;
             
             fetchNWSForecast();
             fetchAllHazardsTelemetry();
@@ -587,7 +650,7 @@
                             type: 'column',
                             width: 33,
                             content: [
-                                { type: 'component', componentName: 'windyMapLeft', title: 'PRIMARY DEPLOYED WINDY CONSOLE — REGIONAL ALPHA' },
+                                { type: 'component', componentName: 'windyMapLeft', title: 'PRIMARY WINDY CONSOLE — REGIONAL ALPHA' },
                                 { type: 'component', componentName: 'localForecast', title: '7-DAY GEOGRAPHIC SYNOPTIC OUTLOOK (19428)' }
                             ]
                         },
@@ -637,7 +700,7 @@
             });
 
             layout.registerComponent('lightningGrid', function(c) {
-                c.getElement().html(`<div style="background:#05070a; height:100%; width:100%; overflow:hidden;"><canvas id="lightningCanvas" class="lightning-map-canvas"></canvas></div>`);
+                c.getElement().html(`<div class="lightning-container-block"><canvas id="lightningCanvas" class="lightning-map-canvas"></canvas></div>`);
                 c.on('open', () => { setTimeout(initLightningRadarCanvas, 200); });
             });
             
