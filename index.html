@@ -4,9 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Integrated Weather Monitor Hub Engine</title>
+    <!-- Core UI Framework Kits -->
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
+    <!-- Ultra-Stable Core Layout Layouts via jsDelivr -->
     <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-base.css" />
     <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-dark-theme.css" />
     
@@ -81,7 +83,7 @@
             border: 1px solid #00ffcc;
             padding: 10px;
             border-radius: 4px;
-            z-index: 9999;
+            z-index: 99;
             box-shadow: 0 0 15px rgba(0,255,204,0.4);
         }
         .windy-control-panel div {
@@ -124,10 +126,11 @@
             margin-bottom: 10px;
             border-radius: 2px;
             cursor: pointer;
-            transition: background 0.2s;
+            transition: background 0.2s, border-color 0.2s;
         }
         .alert-item:hover {
             background: #311c1c;
+            border-left-color: #ff5555;
         }
         .alert-title { color: #ff5555; font-weight: bold; text-transform: uppercase; }
         
@@ -144,10 +147,11 @@
             text-align: center;
             border-radius: 4px;
             cursor: pointer;
-            transition: border-color 0.2s;
+            transition: border-color 0.2s, background-color 0.2s;
         }
         .forecast-card:hover {
             border-color: #00ffcc;
+            background: #1f242c;
         }
         .forecast-card img { width: 45px; height: 45px; }
         .temp-high { color: #ff9900; }
@@ -189,6 +193,60 @@
             margin-top: 8px;
         }
 
+        /* Micro Floating Window Engine (Modal) styling */
+        .hub-modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(13, 17, 23, 0.85);
+            backdrop-filter: blur(4px);
+            z-index: 10000;
+            justify-content: center;
+            align-items: center;
+        }
+        .hub-modal-content {
+            background: #161b22;
+            border: 2px solid #00ffcc;
+            width: 90%;
+            max-width: 650px;
+            max-height: 80vh;
+            border-radius: 6px;
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .hub-modal-header {
+            background: #21262d;
+            padding: 12px 20px;
+            border-bottom: 1px solid #30363d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .hub-modal-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            color: #00ffcc;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+        .hub-modal-close {
+            color: #8b949e;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: color 0.2s;
+        }
+        .hub-modal-close:hover { color: #ff5555; }
+        .hub-modal-body {
+            padding: 20px;
+            overflow-y: auto;
+            color: #fff;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            white-space: pre-wrap; /* Preserves NWS text structural linebreaks cleanly */
+        }
+
         /* Skin Tuning for Window Panels */
         .lm_header { background: #161b22 !important; }
         .lm_tab { background: #21262d !important; color: #8b949e !important; font-family: 'Share Tech Mono', monospace !important; border: 1px solid #30363d !important;}
@@ -205,6 +263,18 @@
 
     <div id="layout-container"></div>
 
+    <!-- Central Micro-Floating Window Component Container -->
+    <div id="hubFloatingModal" class="hub-modal">
+        <div class="hub-modal-content">
+            <div class="hub-modal-header">
+                <div id="modalTitle" class="hub-modal-title">System Diagnostic</div>
+                <div class="hub-modal-close" onclick="closeFloatingModal()"><i class="fa-solid fa-xmark"></i></div>
+            </div>
+            <div id="modalBody" class="hub-modal-body">Loading secure feed packets...</div>
+        </div>
+    </div>
+
+    <!-- UI Core Scripts -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/dist/goldenlayout.min.js"></script>
     
@@ -214,6 +284,7 @@
         let countdownVal = 120;
         let trackedAlertCount = -1; 
         let globalForecastDataCache = null;
+        let globalActiveAlertsCache = {};
 
         const schuylkillGauges = [
             { id: "01472000", name: "Schuylkill River at Reading, PA" },
@@ -223,7 +294,7 @@
             { id: "01474000", name: "Schuylkill River at Philadelphia, PA" }
         ];
 
-        // --- GoldenLayout Restructured Architecture Matrix ---
+        // --- GoldenLayout Config Architecture Matrix ---
         const config = {
             settings: {
                 hasHeaders: true,
@@ -291,9 +362,11 @@
                     <div class="forecast-grid" id="forecast-cards"></div>
                     <hr style="border:0; border-top:1px solid #21262d; margin:20px 0;">
                     
+                    <!-- Relocated Spectrum Ticker inside structural pipeline container -->
                     <h3 style="color:#ff5555; font-size:1rem; margin:0 0 10px 0;"><i class="fa-solid fa-triangle-exclamation"></i> CRITICAL ENVIRONMENTAL SPECTRUM HAZARDS</h3>
                     <div id="alerts-container">Scanning diagnostic telemetry alert matrix...</div>
                     
+                    <!-- Dynamic Radar Lightning Tracker Matrix Panel -->
                     <div id="lightning-matrix-container">
                         <div style="font-weight:bold; font-size:0.85rem; color:#ffcc00;"><i class="fa-solid fa-bolt"></i> DYNAMIC LIGHTNING DETECTION ARRAY (30 MI RADIUS)</div>
                         <canvas id="lightningCanvas" class="lightning-map-canvas"></canvas>
@@ -341,6 +414,23 @@
             buttonElement.classList.add('active');
         }
 
+        // --- Floating Window Control Logic ---
+        function openFloatingModal(title, textHTML) {
+            document.getElementById('modalTitle').innerText = title;
+            document.getElementById('modalBody').innerHTML = textHTML;
+            document.getElementById('hubFloatingModal').style.display = 'flex';
+        }
+
+        function closeFloatingModal() {
+            document.getElementById('hubFloatingModal').style.display = 'none';
+        }
+
+        // Close modal instantly if clicking backdrop overlay area
+        window.onclick = function(event) {
+            const modal = document.getElementById('hubFloatingModal');
+            if (event.target == modal) { closeFloatingModal(); }
+        }
+
         // --- Sound Generation Core Dispatcher ---
         function playAlertChime() {
             try {
@@ -348,7 +438,6 @@
                 if (!AudioContext) return;
                 const ctx = new AudioContext();
                 
-                // Sound architecture sequence dual-tone chime
                 let osc1 = ctx.createOscillator(), osc2 = ctx.createOscillator();
                 let gain = ctx.createGain();
                 
@@ -396,13 +485,17 @@
         function openForecastDetails(index) {
             if (!globalForecastDataCache || !globalForecastDataCache[index]) return;
             const period = globalForecastDataCache[index];
-            const detailWindow = window.open("", "_blank");
-            detailWindow.document.write(`
-                <html><head><title>${period.name} Detailed Forecast</title>
-                <style>body{background:#0d1117; color:#00ffcc; font-family:monospace; padding:40px; text-align:center;} div{border:1px solid #30363d; padding:20px; background:#161b22; display:inline-block; border-radius:8px; max-width:500px;}</style></head>
-                <body><div><h2>${period.name} Detailed Outlook</h2><img src="${period.icon}" style="width:80px;"><h3 style="color:#fff;">${period.temperature}°${period.temperatureUnit} - ${period.shortForecast}</h3><p style="color:#8b949e; line-height:1.6; text-align:left;">${period.detailedForecast}</p></div></body></html>
-            `);
-            detailWindow.document.close();
+            const modalHTML = `
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img src="${period.icon}" style="width:70px; border-radius: 4px;">
+                    <h2 style="margin: 5px 0; color:#fff;">${period.temperature}°${period.temperatureUnit}</h2>
+                    <div style="color:#ffcc00; font-weight:bold; letter-spacing:1px;">${period.shortForecast}</div>
+                </div>
+                <div style="border-top: 1px solid #30363d; padding-top: 15px; color:#c9d1d9; font-family: monospace;">
+                    ${period.detailedForecast}
+                </div>
+            `;
+            openFloatingModal(`${period.name} METEOROLOGICAL OUTLOOK`, modalHTML);
         }
 
         function fetchNWSAlerts() {
@@ -412,26 +505,55 @@
                     const container = document.getElementById('alerts-container');
                     if(!container) return;
                     
-                    // Sound dispatch checker evaluations
                     if (trackedAlertCount !== -1 && data.features.length > trackedAlertCount) {
                         playAlertChime();
                     }
                     trackedAlertCount = data.features.length;
 
-                    if(data.features.length === 0) { container.innerHTML = "<span style='color:#00ff55;'>✓ SYSTEM SCAN: NO ACTIVE WATCHES / WARNINGS REPORTED</span>"; return; }
+                    if(data.features.length === 0) { 
+                        container.innerHTML = "<span style='color:#00ff55;'>✓ SYSTEM SCAN: NO ACTIVE WATCHES / WARNINGS REPORTED</span>"; 
+                        return; 
+                    }
+                    
                     let html = '';
+                    globalActiveAlertsCache = {}; // Wipe old dictionary definitions
+                    
                     data.features.forEach(f => {
-                        // Safe extraction parameters matching NWS system specifications
-                        const alertId = f.properties.id || f.properties.idUrl?.split('/').pop() || "";
+                        const alertId = f.properties.id || f.properties.idUrl?.split('/').pop() || Math.random().toString(36).substr(2, 9);
+                        
+                        // Store official alert payload details directly in memory index tracking cache
+                        globalActiveAlertsCache[alertId] = {
+                            event: f.properties.event,
+                            headline: f.properties.headline,
+                            description: f.properties.description || "No specific narrative text body provided.",
+                            instruction: f.properties.instruction || ""
+                        };
+
                         html += `
-                            <div class="alert-item" onclick="window.open('https://api.weather.gov/alerts/${alertId}', '_blank')">
-                                <div class="alert-title">${f.properties.event}</div>
+                            <div class="alert-item" onclick="openAlertDetails('${alertId}')">
+                                <div class="alert-title"><i class="fa-solid fa-radiation"></i> ${f.properties.event}</div>
                                 <div style="font-size:0.8rem; color:#8b949e; margin:3px 0;">${f.properties.headline}</div>
-                                <div style="font-size:0.75rem; color:#00ffcc; text-decoration:underline;">Click to inspect raw alert grid logs ↗</div>
+                                <div style="font-size:0.75rem; color:#00ffcc; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-folder-open"></i> Deploy Warning Narrative Window...</div>
                             </div>`;
                     });
                     container.innerHTML = html;
                 });
+        }
+
+        function openAlertDetails(alertId) {
+            const alertData = globalActiveAlertsCache[alertId];
+            if (!alertData) return;
+            
+            // Format actual agency briefing instructions text explicitly
+            let dynamicBody = `<div style="color:#ff5555; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #30363d; padding-bottom:8px;">${alertData.headline}</div>`;
+            dynamicBody += `<div style="color:#fff; background:#0d1117; padding:12px; border-radius:4px; border:1px solid #21262d; margin-bottom:15px; font-family:monospace;">${alertData.description}</div>`;
+            
+            if (alertData.instruction) {
+                dynamicBody += `<div style="color:#ffcc00; font-weight:bold; margin-bottom:5px;"><i class="fa-solid fa-shield-halved"></i> RECOMMENDED PROTECTIVE ACTION MEASURES:</div>`;
+                dynamicBody += `<div style="color:#00ffcc; background:#1f242c; padding:12px; border-radius:4px; border:1px solid #30363d; font-family:monospace;">${alertData.instruction}</div>`;
+            }
+            
+            openFloatingModal(`AGENCY ALERT TEXT: ${alertData.event}`, dynamicBody);
         }
 
         function fetchSchuylkillHydrology() {
@@ -472,14 +594,12 @@
             }
             resizeCanvas();
 
-            // Populate background metrics matrix
             function drawRadarBase() {
                 ctx.fillStyle = "#05070a";
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
                 let cx = canvas.width / 2, cy = canvas.height / 2;
                 
-                // Draw radar ring boundaries
                 ctx.strokeStyle = "rgba(0, 255, 204, 0.15)";
                 ctx.lineWidth = 1;
                 for(let r = 30; r < 100; r += 30) {
@@ -488,13 +608,11 @@
                     ctx.stroke();
                 }
                 
-                // Crosshairs
                 ctx.beginPath();
                 ctx.moveTo(cx - 100, cy); ctx.lineTo(cx + 100, cy);
                 ctx.moveTo(cx, cy - 100); ctx.lineTo(cx, cy + 100);
                 ctx.stroke();
                 
-                // Base Core station identifier marker
                 ctx.fillStyle = "#ff5555";
                 ctx.beginPath();
                 ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
@@ -506,7 +624,6 @@
 
             function cycleStrikes() {
                 if (Math.random() < 0.25) {
-                    // Confines random generations structurally within 30-mile scaled canvas radius bounds
                     let angle = Math.random() * Math.PI * 2;
                     let radius = Math.random() * 95; 
                     strikes.push({
@@ -519,7 +636,6 @@
 
                 drawRadarBase();
 
-                // Draw and blend decaying kinetic lightning strike artifacts
                 strikes.forEach((s, idx) => {
                     s.alpha -= 0.015;
                     s.age++;
@@ -528,7 +644,7 @@
                     ctx.strokeStyle = `rgba(255, 204, 0, ${s.alpha})`;
                     ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
                     
-                    if(s.age < 3) { // Core strike flash execution step
+                    if(s.age < 3) { 
                         ctx.beginPath();
                         ctx.moveTo(s.x, s.y - 12);
                         ctx.lineTo(s.x - 4, s.y - 2);
