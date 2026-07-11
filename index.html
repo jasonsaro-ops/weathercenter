@@ -781,6 +781,7 @@
                             content: [
                                 { type: 'component', componentName: 'windyMapLeft', title: 'PRIMARY WINDY CONSOLE — REGIONAL ALPHA' },
                                 { type: 'component', componentName: 'localForecast', title: '7-DAY GEOGRAPHIC SYNOPTIC OUTLOOK (19428)' },
+                                { type: 'component', componentName: 'airQualityPanel', title: 'REGIONAL AIR QUALITY MATRIX (AIRNOW REGIONAL)' }
                             ]
                         },
                         {
@@ -792,19 +793,10 @@
                             ]
                         },
                         {
-    type: 'column',
-    width: 30,
-    content: [
-        { 
-            type: 'component', 
-            componentName: 'lightningGrid', 
-            title: 'DYNAMIC LOCAL LIGHTNING DETECTION ARRAY (30 MI RADIUS)' 
-        },
-        { 
-            type: 'component', 
-            componentName: 'airQualityPanel', 
-            title: 'REGIONAL AIR QUALITY MATRIX (AIRNOW REGIONAL)' 
-        }
+                            type: 'column',
+                            width: 33,
+                            content: [
+                                { type: 'component', componentName: 'lightningGrid', title: 'DYNAMIC LOCAL LIGHTNING DETECTION ARRAY (30 MI RADIUS)' },
                                 { type: 'component', componentName: 'hydrologyFeed', title: 'SCHUYLKILL HYDROLOGIC REAL-TIME STREAMFLOW' }
                             ]
                         }
