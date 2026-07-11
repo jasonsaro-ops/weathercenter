@@ -1,1 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Global Weather Monitor Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/2.6.0/css/goldenlayout-base.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/2.6.0/css/themes/goldenlayout-dark-theme.css" />
+    
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #0d1117;
+            font-family: 'Share Tech Mono', monospace;
+            color: #00ffcc;
+        }
+        #header-bar {
+            height: 40px;
+            background: #161b22;
+            border-bottom: 2px solid #00ffcc;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 20px;
+            box-sizing: border-box;
+        }
+        .title {
+            font-size: 1.2rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 0 0 5px #00ffcc;
+        }
+        .timer-badge {
+            background: #21262d;
+            padding: 4px 10px;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            font-size: 0.9rem;
+        }
+        #layout-container {
+            width: 100%;
+            height: calc(100vh - 40px);
+        }
+        /* Custom Dashboard Component Styling */
+        .weather-component {
+            padding: 15px;
+            height: 100%;
+            background: #0d1117;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .map-component {
+            width: 100%;
+            height: 100%;
+        }
+        .alert-item {
+            border-left: 4px solid #ff3333;
+            background: #211515;
+            padding: 10px;
+            margin-bottom: 10px;
+            border-radius: 2px;
+        }
+        .alert-title { color: #ff5555; font-weight: bold; text-transform: uppercase; }
+        .forecast-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .forecast-card {
+            background: #161b22;
+            border: 1px solid #30363d;
+            padding: 10px;
+            text-align: center;
+            border-radius: 4px;
+        }
+        .forecast-card img { width: 45px; height: 45px; }
+        .temp-high { color: #ff9900; }
+        .temp-low { color: #00ccff; }
+        
+        /* GoldenLayout visual modifications to match custom theme */
+        .lm_header { background: #161b22 !important; }
+        .lm_tab { background: #21262d !important; color: #8b949e !important; font-family: 'Share Tech Mono', monospace !important; border: 1px solid #30363d !important;}
+        .lm_tab.lm_active { background: #0d1117 !important; color: #00ffcc !important; border-bottom: none !important; box-shadow: 0 -2px 0 #00ffcc inset;}
+    </style>
+</head>
+<body>
+
+    <div id="header-bar">
+        <div class="title"><i class="fa-solid fa-satellite-dish"></i> WEATHER MONITOR // GLOBAL CORE</div>
+        <div class="timer-badge">NEXT REFRESH: <span id="countdown">120</span>s</div>
+    </div>
+
+    <div id="layout-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/2.6.0/goldenlayout.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    
+    <script src="app.js"></script>
+</body>
+</html>
