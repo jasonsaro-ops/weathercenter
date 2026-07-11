@@ -1,683 +1,231 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Integrated Weather Monitor Hub Engine</title>
-    <!-- Core UI Framework Kits -->
-    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <!-- Ultra-Stable Core Layout Layouts via jsDelivr -->
-    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-base.css" />
-    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-dark-theme.css" />
-    
-    <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-            background-color: #0d1117;
-            font-family: 'Share Tech Mono', monospace;
-            color: #00ffcc;
-        }
-        #header-bar {
-            height: 40px;
-            background: #161b22;
-            border-bottom: 2px solid #00ffcc;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0 20px;
-            box-sizing: border-box;
-            z-index: 100;
-        }
-        .title {
-            font-size: 1.1rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            text-shadow: 0 0 5px #00ffcc;
-        }
-        .timer-badge {
-            background: #21262d;
-            padding: 4px 10px;
-            border: 1px solid #30363d;
-            border-radius: 4px;
-            font-size: 0.9rem;
-        }
-        #layout-container {
-            width: 100%;
-            height: calc(100vh - 40px);
-            position: relative;
-        }
-        
-        .weather-component {
-            padding: 15px;
-            height: 100%;
-            background: #0d1117;
-            box-sizing: border-box;
-            overflow-y: auto;
-        }
-        
-        /* Windy Container Engine */
-        .windy-frame-wrapper {
-            position: relative;
-            width: 100%;
-            height: 100%;
-            background: #000;
-        }
-        .windy-iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-        }
-        
-        /* Floating Layer Controller Panel */
-        .windy-control-panel {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            background: rgba(22, 27, 34, 0.95);
-            border: 1px solid #00ffcc;
-            padding: 10px;
-            border-radius: 4px;
-            z-index: 99;
-            box-shadow: 0 0 15px rgba(0,255,204,0.4);
-        }
-        .windy-control-panel div {
-            font-weight: bold;
-            font-size: 0.8rem;
-            margin-bottom: 6px;
-            color: #00ffcc;
-            letter-spacing: 1px;
-        }
-        .windy-btn {
-            display: block;
-            width: 140px;
-            background: #21262d;
-            border: 1px solid #30363d;
-            color: #8b949e;
-            padding: 5px 8px;
-            margin-bottom: 4px;
-            border-radius: 3px;
-            cursor: pointer;
-            text-align: left;
-            font-family: 'Share Tech Mono', monospace;
-            font-size: 0.8rem;
-        }
-        .windy-btn:hover {
-            border-color: #00ffcc;
-            color: #fff;
-            background: rgba(0,255,204,0.05);
-        }
-        .windy-btn.active {
-            border-color: #00ffcc;
-            color: #00ffcc;
-            background: rgba(0,255,204,0.15);
-        }
+  <meta charset="UTF-8">
+  <!-- Vital for accurate scaling on mobile devices -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Weather & Metrics Control Center</title>
+  
+  <!-- Golden Layout Engine Styles (Desktop Environment) -->
+  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/css/goldenlayout-base.css" />
+  <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/css/themes/goldenlayout-dark-theme.css" />
+  
+  <style>
+    /* System & Window Baseline Resets */
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #1e1e1e;
+      color: #f5f5f5;
+    }
 
-        /* Weather UI Elements */
-        .alert-item {
-            border-left: 4px solid #ff3333;
-            background: #211515;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 2px;
-            cursor: pointer;
-            transition: background 0.2s, border-color 0.2s;
-        }
-        .alert-item:hover {
-            background: #311c1c;
-            border-left-color: #ff5555;
-        }
-        .alert-title { color: #ff5555; font-weight: bold; text-transform: uppercase; }
-        
-        .forecast-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-        .forecast-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            padding: 10px;
-            text-align: center;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: border-color 0.2s, background-color 0.2s;
-        }
-        .forecast-card:hover {
-            border-color: #00ffcc;
-            background: #1f242c;
-        }
-        .forecast-card img { width: 45px; height: 45px; }
-        .temp-high { color: #ff9900; }
-        .temp-low { color: #00ccff; }
-        
-        .gauge-card {
-            background: #161b22;
-            border: 1px solid #30363d;
-            padding: 12px;
-            margin-bottom: 10px;
-            border-radius: 4px;
-        }
-        .gauge-link {
-            display: inline-block;
-            margin-top: 6px;
-            color: #00ffcc;
-            text-decoration: none;
-            font-size: 0.75rem;
-            border: 1px solid #00ffcc;
-            padding: 4px 8px;
-            border-radius: 2px;
-            font-weight: bold;
-        }
-        
-        /* Lightning Tracking Matrix Components */
-        #lightning-matrix-container {
-            margin-top: 20px;
-            border: 1px solid #30363d;
-            background: #090d13;
-            padding: 10px;
-            border-radius: 4px;
-        }
-        .lightning-map-canvas {
-            width: 100%;
-            height: 220px;
-            background: #05070a;
-            border: 1px solid #21262d;
-            display: block;
-            margin-top: 8px;
-        }
+    /* Shared style defaults across desktop and mobile frames */
+    iframe {
+      border: none;
+      width: 100%;
+      height: 100%;
+    }
 
-        /* Micro Floating Window Engine (Modal) styling */
-        .hub-modal {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(13, 17, 23, 0.85);
-            backdrop-filter: blur(4px);
-            z-index: 10000;
-            justify-content: center;
-            align-items: center;
-        }
-        .hub-modal-content {
-            background: #161b22;
-            border: 2px solid #00ffcc;
-            width: 90%;
-            max-width: 650px;
-            max-height: 80vh;
-            border-radius: 6px;
-            box-shadow: 0 0 30px rgba(0, 255, 204, 0.3);
-            display: flex;
-            flex-direction: column;
-            overflow: hidden;
-        }
-        .hub-modal-header {
-            background: #21262d;
-            padding: 12px 20px;
-            border-bottom: 1px solid #30363d;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .hub-modal-title {
-            font-size: 1.1rem;
-            font-weight: bold;
-            color: #00ffcc;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        .hub-modal-close {
-            color: #8b949e;
-            cursor: pointer;
-            font-size: 1.2rem;
-            transition: color 0.2s;
-        }
-        .hub-modal-close:hover { color: #ff5555; }
-        .hub-modal-body {
-            padding: 20px;
-            overflow-y: auto;
-            color: #fff;
-            font-size: 0.95rem;
-            line-height: 1.6;
-            white-space: pre-wrap; /* Preserves NWS text structural linebreaks cleanly */
-        }
+    .panel-padding-content {
+      padding: 20px;
+      line-height: 1.6;
+    }
 
-        /* Skin Tuning for Window Panels */
-        .lm_header { background: #161b22 !important; }
-        .lm_tab { background: #21262d !important; color: #8b949e !important; font-family: 'Share Tech Mono', monospace !important; border: 1px solid #30363d !important;}
-        .lm_tab.lm_active { background: #0d1117 !important; color: #00ffcc !important; border-bottom: none !important; box-shadow: 0 -2px 0 #00ffcc inset;}
-        .lm_content { background: #0d1117 !important; border: 1px solid #21262d; }
-    </style>
+    /* -------------------------------------------------------------
+       1. DESKTOP VIEWPORT SPECIFICS (Golden Layout Window Manager)
+    ------------------------------------------------------------- */
+    #desktopLayoutContainer {
+      width: 100%;
+      height: 100%;
+      display: none; /* Managed completely by JS on boot */
+    }
+
+    /* Aesthetic overrides for Golden Layout's default dark styling tabs */
+    .lm_header {
+      background: #252526 !important;
+    }
+    .lm_tab.lm_active {
+      background: #1e1e1e !important;
+      border-bottom: 2px solid #007acc !important;
+    }
+
+    /* -------------------------------------------------------------
+       2. MOBILE VIEWPORT SPECIFICS (Responsive Card Streams)
+    ------------------------------------------------------------- */
+    #mobileLayoutContainer {
+      display: none; /* Managed completely by JS on boot */
+      width: 100%;
+      height: 100%;
+      overflow-y: auto; /* Enables physics-based scrolling on phones */
+      -webkit-overflow-scrolling: touch;
+      box-sizing: border-box;
+      padding: 12px;
+    }
+
+    .mobile-app-bar {
+      padding: 8px 4px 16px 4px;
+    }
+    .mobile-app-bar h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: 600;
+      letter-spacing: -0.5px;
+    }
+
+    /* Individual Card representations of application views */
+    .mobile-dashboard-card {
+      background: #252526;
+      border: 1px solid #3c3c3c;
+      border-radius: 8px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .mobile-card-header-bar {
+      background: #2d2d2d;
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      font-weight: bold;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+      border-bottom: 1px solid #3c3c3c;
+      color: #aaaaaa;
+    }
+
+    /* Card viewport sizing rules for single vertical streams */
+    .mobile-card-content-viewport {
+      width: 100%;
+      position: relative;
+    }
+    .frame-height-radar { height: 420px; }
+    .frame-height-text  { height: auto; min-height: 140px; }
+  </style>
 </head>
 <body>
 
-    <div id="header-bar">
-        <div class="title"><i class="fa-solid fa-satellite"></i> CROSS-SYNOPTIC CONTROL ARRAY — HIGH-AVAILABILITY MONITOR</div>
-        <div class="timer-badge">ARRAY CYCLE: <span id="countdown">120</span>s</div>
+  <!-- VIEWPORT TARGET A: Desktop Multi-Window Mode -->
+  <div id="desktopLayoutContainer"></div>
+  
+  <!-- VIEWPORT TARGET B: Mobile Flat Dashboard Mode -->
+  <div id="mobileLayoutContainer">
+    <div class="mobile-app-bar">
+      <h2>Control Center</h2>
     </div>
-
-    <div id="layout-container"></div>
-
-    <!-- Central Micro-Floating Window Component Container -->
-    <div id="hubFloatingModal" class="hub-modal">
-        <div class="hub-modal-content">
-            <div class="hub-modal-header">
-                <div id="modalTitle" class="hub-modal-title">System Diagnostic</div>
-                <div class="hub-modal-close" onclick="closeFloatingModal()"><i class="fa-solid fa-xmark"></i></div>
-            </div>
-            <div id="modalBody" class="hub-modal-body">Loading secure feed packets...</div>
-        </div>
-    </div>
-
-    <!-- UI Core Scripts -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/dist/goldenlayout.min.js"></script>
     
-    <script>
-        const localLat = 40.0759;
-        const localLon = -75.2996;
-        let countdownVal = 120;
-        let trackedAlertCount = -1; 
-        let globalForecastDataCache = null;
-        let globalActiveAlertsCache = {};
+    <!-- Radar Card Module -->
+    <div class="mobile-dashboard-card">
+      <div class="mobile-card-header-bar">Windy Radar Map</div>
+      <div class="mobile-card-content-viewport frame-height-radar" id="mobile-node-radar"></div>
+    </div>
+    
+    <!-- System Metrics Module -->
+    <div class="mobile-dashboard-card">
+      <div class="mobile-card-header-bar">System Performance Metrics</div>
+      <div class="mobile-card-content-viewport frame-height-text" id="mobile-node-metrics"></div>
+    </div>
+  </div>
 
-        const schuylkillGauges = [
-            { id: "01472000", name: "Schuylkill River at Reading, PA" },
-            { id: "01473500", name: "Schuylkill River at Pottstown, PA" },
-            { id: "01474500", name: "Schuylkill River at Norristown, PA" },
-            { id: "01474703", name: "Schuylkill River at Conshohocken, PA" },
-            { id: "01474000", name: "Schuylkill River at Philadelphia, PA" }
-        ];
+  <!-- Runtime Architecture Libraries: jQuery and Golden Layout v1.5.9 -->
+  <script type="text/javascript" src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+  <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/goldenlayout.min.js"></script>
 
-        // --- GoldenLayout Config Architecture Matrix ---
-        const config = {
-            settings: {
-                hasHeaders: true,
-                constrainDragToContainer: true,
-                reorderEnabled: true,
-                selectionEnabled: false,
-                showPopoutIcon: false,
-                showMaximiseIcon: true,
-                showCloseIcon: false
-            },
-            content: [{
-                type: 'row',
-                content: [
-                    {
-                        type: 'column',
-                        width: 50,
-                        content: [
-                            {
-                                type: 'component',
-                                componentName: 'windyMapLeft',
-                                title: 'PRIMARY DEPLOYED WINDY CONSOLE — REGIONAL ALPHA'
-                            },
-                            {
-                                type: 'component',
-                                componentName: 'localForecast',
-                                title: '7-DAY GEOGRAPHIC OUTLOOK (19428)'
-                            }
-                        ]
-                    },
-                    {
-                        type: 'column',
-                        width: 50,
-                        content: [
-                            {
-                                type: 'component',
-                                componentName: 'windyMapRight',
-                                title: 'SECONDARY CLONED WINDY CONSOLE — REGIONAL BRAVO'
-                            },
-                            {
-                                type: 'component',
-                                componentName: 'hydrologyFeed',
-                                title: 'SCHUYLKILL HYDROLOGIC REAL-TIME STREAMFLOW'
-                            }
-                        ]
-                    }
-                ]
-            }]
-        };
+  <script>
+    // =========================================================================
+    // SECTION 1: SYSTEM INJECTION ROUTINES
+    // These functions act as unified injection factories to ensure the DOM markup
+    // and content structure remain identical whether rendered in desktop pane or mobile card.
+    // =========================================================================
+    
+    function mountRadarMapComponent(targetDOMNode) {
+      targetDOMNode.innerHTML = `
+        <iframe 
+          src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=5&overlay=wind&product=ecmwf&level=surface&lat=39.5&lon=-98.5"
+          allowfullscreen>
+        </iframe>`;
+    }
+    
+    function mountMetricsComponent(targetDOMNode) {
+      targetDOMNode.innerHTML = `
+        <div class="panel-padding-content">
+          <p><strong>Status Profile:</strong> Active / Normal</p>
+          <p><strong>System Time:</strong> ${new Date().toLocaleTimeString()}</p>
+          <p>This panel uses common template binding to dynamically attach live view contexts seamlessly to both Golden Layout tab objects and standard mobile scrolling grids based on structural media assertions.</p>
+        </div>`;
+    }
 
-        const layout = new GoldenLayout(config, '#layout-container');
+    // =========================================================================
+    // SECTION 2: RESPONSIVE VIEWPORT MATRIX ROUTER
+    // Evaluates local screen configurations at runtime execution to activate layouts.
+    // =========================================================================
+    
+    // Breaking boundary set to standard 768px tablet limits
+    const screenIsMobileLayout = window.innerWidth < 768;
 
-        // --- Component Registration Pipelines ---
-        layout.registerComponent('windyMapLeft', function(container) {
-            container.getElement().html(generateWindyConsoleMarkup('windy-left-iframe'));
-        });
+    if (screenIsMobileLayout) {
+      // Step A: Make mobile layout active in document flow
+      document.getElementById('mobileLayoutContainer').style.display = 'block';
+      
+      // Step B: Direct mount components to target card nodes
+      mountRadarMapComponent(document.getElementById('mobile-node-radar'));
+      mountMetricsComponent(document.getElementById('mobile-node-metrics'));
+      
+    } else {
+      // Step A: Make desktop window target active in document flow
+      document.getElementById('desktopLayoutContainer').style.display = 'block';
 
-        layout.registerComponent('windyMapRight', function(container) {
-            container.getElement().html(generateWindyConsoleMarkup('windy-right-iframe'));
-        });
-
-        layout.registerComponent('localForecast', function(container) {
-            container.getElement().html(`
-                <div class="weather-component">
-                    <div id="current-obs">Interrogating weather server metrics...</div>
-                    <div class="forecast-grid" id="forecast-cards"></div>
-                    <hr style="border:0; border-top:1px solid #21262d; margin:20px 0;">
-                    
-                    <!-- Relocated Spectrum Ticker inside structural pipeline container -->
-                    <h3 style="color:#ff5555; font-size:1rem; margin:0 0 10px 0;"><i class="fa-solid fa-triangle-exclamation"></i> CRITICAL ENVIRONMENTAL SPECTRUM HAZARDS</h3>
-                    <div id="alerts-container">Scanning diagnostic telemetry alert matrix...</div>
-                    
-                    <!-- Dynamic Radar Lightning Tracker Matrix Panel -->
-                    <div id="lightning-matrix-container">
-                        <div style="font-weight:bold; font-size:0.85rem; color:#ffcc00;"><i class="fa-solid fa-bolt"></i> DYNAMIC LIGHTNING DETECTION ARRAY (30 MI RADIUS)</div>
-                        <canvas id="lightningCanvas" class="lightning-map-canvas"></canvas>
-                    </div>
-                </div>`);
-            
-            container.on('open', () => {
-                fetchNWSForecast();
-                fetchNWSAlerts();
-                initLightningRadarCanvas();
-            });
-        });
-
-        layout.registerComponent('hydrologyFeed', function(container) {
-            container.getElement().html(`
-                <div class="weather-component" id="hydro-river-list">Awaiting connection to USGS water telemetry arrays...</div>`);
-            container.on('open', fetchSchuylkillHydrology);
-        });
-
-        layout.init();
-
-        // --- Layout Generator Helper For Duplicated Maps ---
-        function generateWindyConsoleMarkup(iframeId) {
-            return `
-                <div class="windy-frame-wrapper">
-                    <div class="windy-control-panel">
-                        <div>RADAR MATRIX VIEWS</div>
-                        <button class="windy-btn active" onclick="switchWindyLayer('${iframeId}', 'radar', this)"><i class="fa-solid fa-cloud-showers-heavy"></i> Doppler Radar</button>
-                        <button class="windy-btn" onclick="switchWindyLayer('${iframeId}', 'rain', this)"><i class="fa-solid fa-cloud-rain"></i> Rainfall Accum</button>
-                        <button class="windy-btn" onclick="switchWindyLayer('${iframeId}', 'satellite', this)"><i class="fa-solid fa-moon"></i> Infra Satellite</button>
-                        <button class="windy-btn" onclick="switchWindyLayer('${iframeId}', 'temp', this)"><i class="fa-solid fa-temperature-high"></i> Temperature</button>
-                        <button class="windy-btn" onclick="switchWindyLayer('${iframeId}', 'wind', this)"><i class="fa-solid fa-wind"></i> Kinetic Wind Flow</button>
-                    </div>
-                    <iframe id="${iframeId}" class="windy-iframe" src="https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=radar&product=radar&level=surface&lat=${localLat}&lon=${localLon}&message=true"></iframe>
-                </div>`;
-        }
-
-        function switchWindyLayer(iframeId, layerType, buttonElement) {
-            const iframe = document.getElementById(iframeId);
-            if(!iframe) return;
-            let product = layerType === 'radar' || layerType === 'satellite' ? layerType : 'gfs';
-            iframe.src = `https://embed.windy.com/embed.html?type=map&location=coordinates&metricRain=default&metricTemp=default&metricWind=default&zoom=8&overlay=${layerType}&product=${product}&level=surface&lat=${localLat}&lon=${localLon}&message=true`;
-            
-            buttonElement.parentElement.querySelectorAll('.windy-btn').forEach(btn => btn.classList.remove('active'));
-            buttonElement.classList.add('active');
-        }
-
-        // --- Floating Window Control Logic ---
-        function openFloatingModal(title, textHTML) {
-            document.getElementById('modalTitle').innerText = title;
-            document.getElementById('modalBody').innerHTML = textHTML;
-            document.getElementById('hubFloatingModal').style.display = 'flex';
-        }
-
-        function closeFloatingModal() {
-            document.getElementById('hubFloatingModal').style.display = 'none';
-        }
-
-        // Close modal instantly if clicking backdrop overlay area
-        window.onclick = function(event) {
-            const modal = document.getElementById('hubFloatingModal');
-            if (event.target == modal) { closeFloatingModal(); }
-        }
-
-        // --- Sound Generation Core Dispatcher ---
-        function playAlertChime() {
-            try {
-                const AudioContext = window.AudioContext || window.webkitAudioContext;
-                if (!AudioContext) return;
-                const ctx = new AudioContext();
-                
-                let osc1 = ctx.createOscillator(), osc2 = ctx.createOscillator();
-                let gain = ctx.createGain();
-                
-                osc1.type = 'sine'; osc1.frequency.setValueAtTime(880, ctx.currentTime);
-                osc2.type = 'triangle'; osc2.frequency.setValueAtTime(440, ctx.currentTime);
-                
-                gain.gain.setValueAtTime(0.2, ctx.currentTime);
-                gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
-                
-                osc1.connect(gain); osc2.connect(gain);
-                gain.connect(ctx.destination);
-                
-                osc1.start(); osc2.start();
-                osc1.stop(ctx.currentTime + 0.4); osc2.stop(ctx.currentTime + 0.4);
-            } catch(e) { console.error("Audio Context initialization block encountered.", e); }
-        }
-
-        // --- Data Fetching & Intercept Click Binding APIs ---
-        function fetchNWSForecast() {
-            fetch(`https://api.weather.gov/points/${localLat},${localLon}`)
-                .then(res => res.json())
-                .then(d => fetch(d.properties.forecast))
-                .then(res => res.json())
-                .then(data => {
-                    globalForecastDataCache = data.properties.periods;
-                    let html = '';
-                    const obsEl = document.getElementById('current-obs');
-                    if(obsEl) obsEl.innerHTML = `<h3 style="margin:0 0 5px 0;">CURRENT WEATHER</h3><span style="color:#fff; font-size:1.1rem;">${globalForecastDataCache[0].temperature}°${globalForecastDataCache[0].temperatureUnit} — ${globalForecastDataCache[0].shortForecast}</span>`;
-                    
-                    globalForecastDataCache.forEach((p, i) => {
-                        if(i < 8) {
-                            html += `
-                            <div class="forecast-card" onclick="openForecastDetails(${i})">
-                                <div style="color:#8b949e; font-size:0.8rem;">${p.name}</div>
-                                <img src="${p.icon}">
-                                <div class="${p.isDaytime?'temp-high':'temp-low'}">${p.temperature}°${p.temperatureUnit}</div>
-                            </div>`;
-                        }
-                    });
-                    const cardsEl = document.getElementById('forecast-cards');
-                    if(cardsEl) cardsEl.innerHTML = html;
-                });
-        }
-
-        function openForecastDetails(index) {
-            if (!globalForecastDataCache || !globalForecastDataCache[index]) return;
-            const period = globalForecastDataCache[index];
-            const modalHTML = `
-                <div style="text-align: center; margin-bottom: 15px;">
-                    <img src="${period.icon}" style="width:70px; border-radius: 4px;">
-                    <h2 style="margin: 5px 0; color:#fff;">${period.temperature}°${period.temperatureUnit}</h2>
-                    <div style="color:#ffcc00; font-weight:bold; letter-spacing:1px;">${period.shortForecast}</div>
-                </div>
-                <div style="border-top: 1px solid #30363d; padding-top: 15px; color:#c9d1d9; font-family: monospace;">
-                    ${period.detailedForecast}
-                </div>
-            `;
-            openFloatingModal(`${period.name} METEOROLOGICAL OUTLOOK`, modalHTML);
-        }
-
-        function fetchNWSAlerts() {
-            fetch('https://api.weather.gov/alerts/active?area=PA')
-                .then(res => res.json())
-                .then(data => {
-                    const container = document.getElementById('alerts-container');
-                    if(!container) return;
-                    
-                    if (trackedAlertCount !== -1 && data.features.length > trackedAlertCount) {
-                        playAlertChime();
-                    }
-                    trackedAlertCount = data.features.length;
-
-                    if(data.features.length === 0) { 
-                        container.innerHTML = "<span style='color:#00ff55;'>✓ SYSTEM SCAN: NO ACTIVE WATCHES / WARNINGS REPORTED</span>"; 
-                        return; 
-                    }
-                    
-                    let html = '';
-                    globalActiveAlertsCache = {}; // Wipe old dictionary definitions
-                    
-                    data.features.forEach(f => {
-                        const alertId = f.properties.id || f.properties.idUrl?.split('/').pop() || Math.random().toString(36).substr(2, 9);
-                        
-                        // Store official alert payload details directly in memory index tracking cache
-                        globalActiveAlertsCache[alertId] = {
-                            event: f.properties.event,
-                            headline: f.properties.headline,
-                            description: f.properties.description || "No specific narrative text body provided.",
-                            instruction: f.properties.instruction || ""
-                        };
-
-                        html += `
-                            <div class="alert-item" onclick="openAlertDetails('${alertId}')">
-                                <div class="alert-title"><i class="fa-solid fa-radiation"></i> ${f.properties.event}</div>
-                                <div style="font-size:0.8rem; color:#8b949e; margin:3px 0;">${f.properties.headline}</div>
-                                <div style="font-size:0.75rem; color:#00ffcc; text-transform: uppercase; font-weight: bold;"><i class="fa-solid fa-folder-open"></i> Deploy Warning Narrative Window...</div>
-                            </div>`;
-                    });
-                    container.innerHTML = html;
-                });
-        }
-
-        function openAlertDetails(alertId) {
-            const alertData = globalActiveAlertsCache[alertId];
-            if (!alertData) return;
-            
-            // Format actual agency briefing instructions text explicitly
-            let dynamicBody = `<div style="color:#ff5555; font-weight:bold; margin-bottom:10px; border-bottom:1px solid #30363d; padding-bottom:8px;">${alertData.headline}</div>`;
-            dynamicBody += `<div style="color:#fff; background:#0d1117; padding:12px; border-radius:4px; border:1px solid #21262d; margin-bottom:15px; font-family:monospace;">${alertData.description}</div>`;
-            
-            if (alertData.instruction) {
-                dynamicBody += `<div style="color:#ffcc00; font-weight:bold; margin-bottom:5px;"><i class="fa-solid fa-shield-halved"></i> RECOMMENDED PROTECTIVE ACTION MEASURES:</div>`;
-                dynamicBody += `<div style="color:#00ffcc; background:#1f242c; padding:12px; border-radius:4px; border:1px solid #30363d; font-family:monospace;">${alertData.instruction}</div>`;
+      // Step B: Configure Window Manager Tree Architecture
+      const layoutCoreConfiguration = {
+        settings: {
+          showPopoutIcon: false, // Disables multi-tab popout breaking behaviors on standalone web
+          showMaximiseIcon: true
+        },
+        content: [{
+          type: 'row',
+          content: [
+            {
+              type: 'component',
+              componentName: 'radarWidget',
+              title: 'Windy Radar Map',
+              width: 65
+            }, 
+            {
+              type: 'component',
+              componentName: 'metricsWidget',
+              title: 'System Metrics',
+              width: 35
             }
-            
-            openFloatingModal(`AGENCY ALERT TEXT: ${alertData.event}`, dynamicBody);
-        }
+          ]
+        }]
+      };
 
-        function fetchSchuylkillHydrology() {
-            const siteIds = schuylkillGauges.map(g => g.id).join(',');
-            fetch(`https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${siteIds}&parameterCd=00065`)
-                .then(res => res.json())
-                .then(data => {
-                    let html = '<h3 style="margin-top:0; color:#00ffcc; letter-spacing:1px;">SCHUYLKILL HYDRO-CORRIDOR TELEMETRY</h3>';
-                    const list = data.value.timeSeries;
-                    schuylkillGauges.forEach(g => {
-                        const matched = list.find(ts => ts.sourceInfo.siteCode[0].value === g.id);
-                        const height = matched?.values[0]?.value[0]?.value || "N/A";
-                        html += `
-                            <div class="gauge-card">
-                                <div style="font-weight:bold; color:#fff; font-size:0.95rem;">${g.name}</div>
-                                <div style="color:#00ffcc; margin:5px 0; font-size:0.9rem;"><i class="fa-solid fa-water"></i> CURRENT STAGE: ${height} FT</div>
-                                <a class="gauge-link" href="https://waterdata.usgs.gov/monitoring-location/${g.id}/#parameterCode=00065&period=P7D" target="_blank" rel="noopener noreferrer">
-                                    Analyze Site Station ${g.id} Metrics ↗
-                                </a>
-                            </div>`;
-                    });
-                    const container = document.getElementById('hydro-river-list');
-                    if(container) container.innerHTML = html;
-                });
-        }
+      // Step C: Initialize Window Engine Instance
+      const desktopWorkspaceLayout = new GoldenLayout(layoutCoreConfiguration, $('#desktopLayoutContainer'));
 
-        // --- Custom Interactive Lightning Radar Tracking System Engine ---
-        function initLightningRadarCanvas() {
-            const canvas = document.getElementById('lightningCanvas');
-            if(!canvas) return;
-            const ctx = canvas.getContext('2d');
-            
-            let strikes = [];
-            
-            function resizeCanvas() {
-                canvas.width = canvas.parentElement.clientWidth - 20;
-                canvas.height = 200;
-            }
-            resizeCanvas();
+      // Step D: Map registered component hooks back to unified injection controllers
+      desktopWorkspaceLayout.registerComponent('radarWidget', function(container, state) {
+        // [0] strips jQuery container arrays down to native elements required by our injectors
+        mountRadarMapComponent(container.getElement()[0]);
+      });
 
-            function drawRadarBase() {
-                ctx.fillStyle = "#05070a";
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                let cx = canvas.width / 2, cy = canvas.height / 2;
-                
-                ctx.strokeStyle = "rgba(0, 255, 204, 0.15)";
-                ctx.lineWidth = 1;
-                for(let r = 30; r < 100; r += 30) {
-                    ctx.beginPath();
-                    ctx.arc(cx, cy, r, 0, 2 * Math.PI);
-                    ctx.stroke();
-                }
-                
-                ctx.beginPath();
-                ctx.moveTo(cx - 100, cy); ctx.lineTo(cx + 100, cy);
-                ctx.moveTo(cx, cy - 100); ctx.lineTo(cx, cy + 100);
-                ctx.stroke();
-                
-                ctx.fillStyle = "#ff5555";
-                ctx.beginPath();
-                ctx.arc(cx, cy, 3, 0, 2 * Math.PI);
-                ctx.fill();
-                ctx.fillStyle = "rgba(0, 255, 204, 0.7)";
-                ctx.font = "9px monospace";
-                ctx.fillText("LOC: 19428", cx + 6, cy - 4);
-            }
+      desktopWorkspaceLayout.registerComponent('metricsWidget', function(container, state) {
+        mountMetricsComponent(container.getElement()[0]);
+      });
 
-            function cycleStrikes() {
-                if (Math.random() < 0.25) {
-                    let angle = Math.random() * Math.PI * 2;
-                    let radius = Math.random() * 95; 
-                    strikes.push({
-                        x: (canvas.width / 2) + Math.cos(angle) * radius,
-                        y: (canvas.height / 2) + Math.sin(angle) * radius,
-                        alpha: 1.0,
-                        age: 0
-                    });
-                }
+      // Step E: Compute spatial rendering dimensions and launch
+      desktopWorkspaceLayout.init();
 
-                drawRadarBase();
-
-                strikes.forEach((s, idx) => {
-                    s.alpha -= 0.015;
-                    s.age++;
-                    if(s.alpha <= 0) { strikes.splice(idx, 1); return; }
-                    
-                    ctx.strokeStyle = `rgba(255, 204, 0, ${s.alpha})`;
-                    ctx.fillStyle = `rgba(255, 255, 255, ${s.alpha})`;
-                    
-                    if(s.age < 3) { 
-                        ctx.beginPath();
-                        ctx.moveTo(s.x, s.y - 12);
-                        ctx.lineTo(s.x - 4, s.y - 2);
-                        ctx.lineTo(s.x + 2, s.y);
-                        ctx.lineTo(s.x, s.y + 10);
-                        ctx.stroke();
-                    }
-                    
-                    ctx.beginPath();
-                    ctx.arc(s.x, s.y, 2.5, 0, 2 * Math.PI);
-                    ctx.fill();
-                });
-
-                requestAnimationFrame(cycleStrikes);
-            }
-            cycleStrikes();
-            window.addEventListener('resize', resizeCanvas);
-        }
-
-        // --- System Core Refresher Loop (120 Seconds) ---
-        setInterval(() => {
-            countdownVal--;
-            if(countdownVal <= 0) {
-                countdownVal = 120;
-                fetchNWSForecast();
-                fetchNWSAlerts();
-                fetchSchuylkillHydrology();
-            }
-            const timerEl = document.getElementById('countdown');
-            if(timerEl) timerEl.innerText = countdownVal;
-        }, 1000);
-
-        window.addEventListener('resize', () => { layout.updateSize(); });
-    </script>
+      // Step F: Establish resize safety hooks for desktop system scaling
+      window.addEventListener('resize', () => {
+        desktopWorkspaceLayout.updateSize();
+      });
+    }
+  </script>
 </body>
 </html>
