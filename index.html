@@ -248,17 +248,17 @@
             `);
 
             setTimeout(() => {
-                // Initialize high-resolution base engine mapping framework
+                // Initialize high-resolution map boundaries
                 mapObject = L.map('map', { maxZoom: 18, minZoom: 3 }).setView([39.8283, -98.5795], 5);
                 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-                    attribution: '&copy; OpenStreetMap &copy; CARTO'
+                    attribution: '&copy; OpenStreetMap &copy; CARTO',
+                    maxZoom: 18
                 }).addTo(mapObject);
 
                 lightningLayerGroup = L.layerGroup().addTo(mapObject);
                 peakFlowLayerGroup = L.layerGroup().addTo(mapObject);
 
-                // High-fidelity target operational drought data overlays
                 droughtWmsLayer = L.tileLayer.wms('https://www.droughtmonitor.unl.edu/data/png/', {
                     layers: 'USDM_current', format: 'image/png', transparent: true, opacity: 0.4
                 });
@@ -317,14 +317,19 @@
         // --- Core Application Logic Controllers ---
         async function syncRadarLayer() {
             try {
-                // Fetch dynamic cache hashes directly from the API endpoint to prevent zoom dropouts
                 const res = await fetch('https://api.rainviewer.com/public/weather-maps.json');
                 const data = await res.json();
                 const latestPath = data.radar.past[data.radar.past.length - 1].path;
                 
                 if(radarLayer && mapObject) mapObject.removeLayer(radarLayer);
                 
-                radarLayer = L.tileLayer(`${data.host}${latestPath}/512/{z}/{x}/{y}/2/1_1.png`, { maxZoom: 18 });
+                // FIXED: Setting maxZoom and maxNativeZoom forces Leaflet to upscale tiles cleanly at close ranges
+                radarLayer = L.tileLayer(`${data.host}${latestPath}/256/{z}/{x}/{y}/2/1_1.png`, { 
+                    maxZoom: 18,
+                    maxNativeZoom: 12,
+                    tileSize: 256
+                });
+                
                 if(document.getElementById('layer-radar')?.checked) radarLayer.addTo(mapObject);
             } catch(e) { console.error("High-Res radar parsing failure.", e); }
         }
@@ -387,55 +392,3 @@
 
         function fetchNWSAlerts() {
             fetch('https://api.weather.gov/alerts/active?area=PA').then(res => res.json()).then(data => {
-                const container = document.getElementById('alerts-container');
-                if(!container) return;
-                if(data.features.length === 0) { container.innerHTML = "<span style='color:#00ff55;'>✓ NO ACTIVE SEVERE WEATHER HAZARDS IN PA</span>"; return; }
-                let html = '';
-                data.features.forEach(f => {
-                    html += `<div class="alert-item"><div class="alert-title">${f.properties.event}</div><div style="font-size:0.8rem; color:#8b949e; margin:3px 0;">${f.properties.headline}</div></div>`;
-                });
-                container.innerHTML = html;
-            });
-        }
-
-        function fetchSchuylkillHydrology() {
-            const siteIds = schuylkillGauges.map(g => g.id).join(',');
-            fetch(`https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${siteIds}&parameterCd=00065`)
-                .then(res => res.json()).then(data => {
-                    let html = '<h3 style="margin-top:0;">SCHUYLKILL RIVERTREND METRICS</h3>';
-                    const list = data.value.timeSeries;
-                    schuylkillGauges.forEach(g => {
-                        const matched = list.find(ts => ts.sourceInfo.siteCode[0].value === g.id);
-                        const height = matched?.values[0]?.value[0]?.value || "N/A";
-                        html += `
-                            <div class="gauge-card">
-                                <div style="font-weight:bold; color:#fff;">${g.name}</div>
-                                <div style="color:#00ffcc; margin:4px 0;"><i class="fa-solid fa-water"></i> GAGE STAGE: ${height} FT</div>
-                                <a class="gauge-link" href="https://dashboard.waterdata.usgs.gov/app/nwd/en/?siteNumber=${g.id}&aoi=default" target="_blank" rel="noopener noreferrer">
-                                    Launch Site Gauge ${g.id} Dashboard ↗
-                                </a>
-                            </div>`;
-                    });
-                    document.getElementById('hydro-river-list').innerHTML = html;
-                });
-        }
-
-        // --- System Core Refresher Loop (120 Seconds) ---
-        setInterval(() => {
-            countdownVal--;
-            if(countdownVal <= 0) {
-                countdownVal = 120;
-                syncRadarLayer();
-                generateLightningData();
-                fetchNWSForecast();
-                fetchNWSAlerts();
-                fetchSchuylkillHydrology();
-            }
-            document.getElementById('countdown').innerText = countdownVal;
-        }, 1000);
-
-        // Tie layout engine boundaries directly into browser scale transformations
-        window.addEventListener('resize', () => { layout.updateSize(); });
-    </script>
-</body>
-</html>
