@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/css/goldenlayout-base.css" />
-    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/css/themes/goldenlayout-dark-theme.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-base.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/src/css/goldenlayout-dark-theme.css" />
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -154,7 +154,7 @@
     <div id="layout-container"></div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/goldenlayout.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/golden-layout@1.5.9/dist/goldenlayout.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script>
@@ -177,7 +177,7 @@
             { id: "01474000", name: "Schuylkill River at Philadelphia, PA", lat: 39.9676, lon: -75.1832 }
         ];
 
-        // --- GoldenLayout Config (Movable, Dockable, Resizable Panels) ---
+        // --- GoldenLayout Config (Fully Movable, Dockable, Resizable Panels) ---
         const config = {
             settings: {
                 hasHeaders: true,
@@ -234,6 +234,7 @@
 
         // --- Layout Registration Framework ---
         layout.registerComponent('radarMap', function(container) {
+            // Write local structural DOM to layout element instance safely
             container.getElement().html(`
                 <div style="position:relative; width:100%; height:100%;">
                     <div class="map-layer-panel">
@@ -247,8 +248,8 @@
                 </div>
             `);
 
-            setTimeout(() => {
-                // Initialize high-resolution map boundaries
+            // CRITICAL SAFEGUARD: Listen for GoldenLayout to finish rendering before spinning up map bounds
+            container.on('open', function() {
                 mapObject = L.map('map', { maxZoom: 18, minZoom: 3 }).setView([39.8283, -98.5795], 5);
                 
                 L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
@@ -263,7 +264,7 @@
                     layers: 'USDM_current', format: 'image/png', transparent: true, opacity: 0.4
                 });
 
-                // Set up UI overlay listeners
+                // Hook user inputs up to toggles
                 document.getElementById('layer-radar').addEventListener('change', toggleRadar);
                 document.getElementById('layer-lightning').addEventListener('change', toggleLightning);
                 document.getElementById('layer-peaks').addEventListener('change', togglePeaks);
@@ -271,7 +272,7 @@
                 
                 mapObject.on('moveend', () => { if(document.getElementById('layer-peaks').checked) fetchUSGSPeakFlows(); });
 
-                // Add Schuylkill River station map markers
+                // Pin site-specific gauges
                 schuylkillGauges.forEach(gauge => {
                     L.circleMarker([gauge.lat, gauge.lon], {
                         radius: 8, fillColor: '#00ffcc', color: '#fff', weight: 1.5, fillOpacity: 0.8
@@ -287,8 +288,15 @@
                 syncRadarLayer();
                 generateLightningData();
                 
-                setTimeout(() => { mapObject.flyTo([localLat, localLon], 9); }, 800);
-            }, 200);
+                setTimeout(() => { mapObject.flyTo([localLat, localLon], 9); }, 500);
+            });
+
+            // CRITICAL FIX: Forces Leaflet to recalibrate and clear artifacts whenever panels move
+            container.on('resize', function() {
+                if (mapObject) {
+                    mapObject.invalidateSize();
+                }
+            });
         });
 
         layout.registerComponent('localForecast', function(container) {
@@ -312,6 +320,7 @@
             fetchSchuylkillHydrology();
         });
 
+        // Initialize core manager stack
         layout.init();
 
         // --- Core Application Logic Controllers ---
@@ -323,14 +332,14 @@
                 
                 if(radarLayer && mapObject) mapObject.removeLayer(radarLayer);
                 
-                // FIXED: Setting maxZoom and maxNativeZoom forces Leaflet to upscale tiles cleanly at close ranges
+                // Native upscaling configuration prevents tile load breaking at level 13+
                 radarLayer = L.tileLayer(`${data.host}${latestPath}/256/{z}/{x}/{y}/2/1_1.png`, { 
                     maxZoom: 18,
                     maxNativeZoom: 12,
                     tileSize: 256
                 });
                 
-                if(document.getElementById('layer-radar')?.checked) radarLayer.addTo(mapObject);
+                if(document.getElementById('layer-radar')?.checked && mapObject) radarLayer.addTo(mapObject);
             } catch(e) { console.error("High-Res radar parsing failure.", e); }
         }
 
@@ -355,7 +364,7 @@
             try {
                 const bounds = mapObject.getBounds();
                 const bbox = `${bounds.getWest()},${bounds.getSouth()},${bounds.getEast()},${bounds.getNorth()}`;
-                const res = await fetch(`https://api.waterdata.usgs.gov/ogcapi/v0/collections/peaks/items?limit=60&bbox=${bbox}`);
+                const res = await fetch://api.waterdata.usgs.gov/ogcapi/v0/collections/peaks/items?limit=60&bbox=${bbox}`;
                 const data = await res.json();
                 
                 if(data.features) {
@@ -392,3 +401,54 @@
 
         function fetchNWSAlerts() {
             fetch('https://api.weather.gov/alerts/active?area=PA').then(res => res.json()).then(data => {
+                const container = document.getElementById('alerts-container');
+                if(!container) return;
+                if(data.features.length === 0) { container.innerHTML = "<span style='color:#00ff55;'>✓ NO ACTIVE SEVERE WEATHER HAZARDS IN PA</span>"; return; }
+                let html = '';
+                data.features.forEach(f => {
+                    html += `<div class="alert-item"><div class="alert-title">${f.properties.event}</div><div style="font-size:0.8rem; color:#8b949e; margin:3px 0;">${f.properties.headline}</div></div>`;
+                });
+                container.innerHTML = html;
+            });
+        }
+
+        function fetchSchuylkillHydrology() {
+            const siteIds = schuylkillGauges.map(g => g.id).join(',');
+            fetch(`https://waterservices.usgs.gov/nwis/iv/?format=json&sites=${siteIds}&parameterCd=00065`)
+                .then(res => res.json()).then(data => {
+                    let html = '<h3 style="margin-top:0;">SCHUYLKILL RIVERTREND METRICS</h3>';
+                    const list = data.value.timeSeries;
+                    schuylkillGauges.forEach(g => {
+                        const matched = list.find(ts => ts.sourceInfo.siteCode[0].value === g.id);
+                        const height = matched?.values[0]?.value[0]?.value || "N/A";
+                        html += `
+                            <div class="gauge-card">
+                                <div style="font-weight:bold; color:#fff;">${g.name}</div>
+                                <div style="color:#00ffcc; margin:4px 0;"><i class="fa-solid fa-water"></i> GAGE STAGE: ${height} FT</div>
+                                <a class="gauge-link" href="https://dashboard.waterdata.usgs.gov/app/nwd/en/?siteNumber=${g.id}&aoi=default" target="_blank" rel="noopener noreferrer">
+                                    Launch Site Gauge ${g.id} Dashboard ↗
+                                </a>
+                            </div>`;
+                    });
+                    document.getElementById('hydro-river-list').innerHTML = html;
+                });
+        }
+
+        // --- System Core Refresher Loop (120 Seconds) ---
+        setInterval(() => {
+            countdownVal--;
+            if(countdownVal <= 0) {
+                countdownVal = 120;
+                syncRadarLayer();
+                generateLightningData();
+                fetchNWSForecast();
+                fetchNWSAlerts();
+                fetchSchuylkillHydrology();
+            }
+            document.getElementById('countdown').innerText = countdownVal;
+        }, 1000);
+
+        window.addEventListener('resize', () => { layout.updateSize(); });
+    </script>
+</body>
+</html>
