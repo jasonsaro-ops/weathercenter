@@ -7,8 +7,8 @@
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
-    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/2.6.0/css/goldenlayout-base.css" />
-    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/2.6.0/css/themes/goldenlayout-dark-theme.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/css/goldenlayout-base.css" />
+    <link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/css/themes/goldenlayout-dark-theme.css" />
     
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 
@@ -32,6 +32,7 @@
             justify-content: space-between;
             padding: 0 20px;
             box-sizing: border-box;
+            z-index: 10;
         }
         .title {
             font-size: 1.2rem;
@@ -49,6 +50,7 @@
         #layout-container {
             width: 100%;
             height: calc(100vh - 40px);
+            position: relative;
         }
         /* Custom Dashboard Component Styling */
         .weather-component {
@@ -87,10 +89,11 @@
         .temp-high { color: #ff9900; }
         .temp-low { color: #00ccff; }
         
-        /* GoldenLayout visual modifications to match custom theme */
+        /* GoldenLayout adjustments for theme unity */
         .lm_header { background: #161b22 !important; }
         .lm_tab { background: #21262d !important; color: #8b949e !important; font-family: 'Share Tech Mono', monospace !important; border: 1px solid #30363d !important;}
         .lm_tab.lm_active { background: #0d1117 !important; color: #00ffcc !important; border-bottom: none !important; box-shadow: 0 -2px 0 #00ffcc inset;}
+        .lm_content { background: #0d1117 !important; }
     </style>
 </head>
 <body>
@@ -102,7 +105,8 @@
 
     <div id="layout-container"></div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/2.6.0/goldenlayout.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/golden-layout/1.5.9/goldenlayout.min.js"></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     
     <script src="app.js"></script>
